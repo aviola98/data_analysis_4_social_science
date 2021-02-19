@@ -1,0 +1,63 @@
+---
+title: "Exercise_3_Viola"
+author: "André Viola"
+date: "2/19/2021"
+output: 
+  html_document:
+    df_print: paged
+  
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE)
+
+```
+
+```{r}
+library("readr")
+library("tidyverse")
+library("dplyr")
+```
+
+
+
+**Use uma função apropriada para abrir o arquivo em R.**
+```{r}
+data <- read_delim("votacao_partido_munzona_2008_BA.txt", delim = ";", locale = locale(encoding = "latin1"))
+```
+
+**Use o arquivo leiame.pdf que fica no zip com o arquivo do TSE para identificar o encoding dos dados, e os nomes das variáveis. Incorporar esta informação na abertura do arquivo.**
+```{r}
+
+data <- read_delim("votacao_partido_munzona_2008_BA.txt", delim=";",locale=locale(encoding="latin1"), col_names=c("DATA_GERACAO","HORA_GERACAO","ANO_ELEICAO","NUM_TURNO","DESCRICAO_ELEICAO","SIGLA_UF","SIGLA_UE","CODIGO_MUNICIPIO","NOME_MUNICIPIO","NUMERO_ZONA","CODIGO_CARGO","DESCRICAO_CARGO","TIPO_LEGENDA","NOME_COLIGACAO","COMPOSICAO_LEGENDA","SIGLA_PARTIDO","NUMERO_PARTIDO","NOME_PARTIDO","QTDE_VOTOS_NOMINAIS","QTDE_VOTOS_LEGENDA","SEQUENCIAL_COLIGACAO"))
+
+```
+
+***Crie uma tabela bonita em R Markdown, e verifique que o número de colunas e observações fazem sentido.***
+
+```{r}
+data
+```
+
+***Tente manipular a base utilizando as funções que aprendemos no tutorial de hoje.***
+
+#No primeiro caso eu filtrei os dados referentes ao município de Salvador que tivessem uma quantidade de votos superiores a 1000
+```{r}
+#filtrering only the data regarding Salvador and the voting count over 1000
+
+salvador_over_onethousand <- data %>% filter(NOME_MUNICIPIO=="SALVADOR" & QTDE_VOTOS_NOMINAIS > 1000)
+
+salvador_over_onethousand
+
+```
+
+#No segundo caso eu filtrei os votos recebidos pelo PT no municipio de Alagoinhas 
+```{r}
+#Vote count received by the Worker's Party (PT) in the municipality of Alagoinhas
+
+alagoinhas_data_pt <- data %>% filter(NOME_MUNICIPIO=="ALAGOINHAS" & SIGLA_PARTIDO=="PT" & NOME_PARTIDO=="PARTIDO DOS TRABALHADORES" & NUMERO_PARTIDO=="13")
+
+alagoinhas_data_pt
+```
+
