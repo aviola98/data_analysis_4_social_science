@@ -1,0 +1,51 @@
+---
+title: "Exercise_4_Viola"
+author: "André Viola"
+date: "2/25/2021"
+output:
+   html_document: 
+      df_print: paged
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE)
+
+```
+
+```{r}
+library("readr")
+library("tidyverse")
+library("dplyr")
+library("nycflights13")
+```
+
+***Crie uma data completa numa variável única, com o formato “day-month-year”.***
+
+```{r}
+flights %>% unite("Date", day, month, year, sep = "-")
+```
+
+***Divide a variável time_hour em duas; uma variável de time e a outra variável de hour.***
+
+```{r}
+flights %>% separate(time_hour, c("time", "hour"), sep = " ")
+```
+
+***Recodifique a variável dep_delay para uma variável binária, que seja 1 quando tem atraso, e 0 quando não tem atraso (valores negativos significam decolagens antes do horário previsto).***
+
+```{r}
+flights %>% mutate(dep_delay=case_when(dep_delay> 0~1,
+                                       dep_delay <= 0~0))
+```
+
+***A companhia aérea US Airways (código ‘US’) se fundiu com American Airlines (código ‘AA’) em 2015. Recodifique voos de US Airways como voos de American Airlines.***
+
+```{r}
+flights <- flights %>% mutate(carrier=case_when(carrier=="US"~"AA",
+                                    TRUE~carrier))
+
+flights
+```
+
+
