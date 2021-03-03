@@ -1,0 +1,57 @@
+---
+title: "Exercise_5_Viola"
+author: "André Viola"
+date: "2/25/2021"
+output: 
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE)
+
+```
+```{r}
+library("readr")
+library("tidyverse")
+library("dplyr")
+library("nycflights13")
+```
+
+***Ordene o banco de dados de menor a maior duração (air_time), incluindo apenas os voos com destino de Anchorage (ANC).***
+```{r}
+flights %>% filter(dest == "ANC") %>%
+  arrange(air_time)
+```
+
+***Identifique o voo mais atrasado (dep_delay) entre LaGuardia (LGA) e Atlanta (ATL). Quão atrasado foi o voo?***
+
+```{r}
+flights %>% filter(origin == "LGA"& dest == "ATL") %>%
+  top_n(1,dep_delay)
+
+delay <- (2257-759)/60
+delay
+```
+
+O voô atrasou-se `r delay` horas
+
+***Calcule a velocidade de cada voo, e selecione os três voos mais rápidos. Eles voaram de qual aeroporto para qual destino?***
+
+```{r}
+flights %>% mutate(speed=distance/air_time)%>%
+  top_n(3,speed) %>%
+  select(speed,origin,dest)
+```
+
+Os 3 voôs mais rapidos sairam respectivamente de Newmar(EWR), LaGuardia(LGA) e Newmark(EWR) e foram, respectivamente, com destino a Greensville(GSP),Atlanta(ATL)e Minneapolis (MSP)
+
+***Para os voos com destino de Anchorage (ANC), verifique que eles são ordenados cronologicamente (por year, month, day, e dep_time) e gera uma nova variável com a duração (air_time) do voo anterior. Agora, compare a duração de cada voo com a duração do voo anterior.***
+
+```{r}
+flights %>% filter(dest == "ANC") %>% 
+  arrange(year,month,day,dep_time) %>% 
+  mutate(former_air_time = lag(air_time),former_air_time_dif=air_time - former_air_time)
+```
+
