@@ -1,0 +1,142 @@
+---
+title: "Challenge_1_Viola"
+author: "André Viola"
+date: "3/6/2021"
+output:
+  html_document:
+    df_print: paged 
+---
+```{r, echo=FALSE}
+#preventing the print of undesirable information (code, errors etc...)
+
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE)
+
+```
+
+```{r}
+#installing and opening libraries
+library("readr")
+library("tidyverse")
+library("dplyr")
+```
+
+***Q2 Abre o arquivo para São Paulo (votacao_candidato_munzona_2012_SP.txt) em R com os nomes de colunas e o encoding corretos de acordo com a seção relevante de leaime.pdf.***
+```{r}
+
+#opening the dataset using the names in "leiame.pdf" 
+votacao_candidatoSP_2012 <- read_delim("votacao_candidato_munzona_2012_SP.txt", delim=";",locale=locale(encoding="latin1"), col_names=c("DATA_GERACAO","HORA_GERACAO","ANO_ELEICAO","NUM_TURNO","DESCRICAO_ELEICAO","SIGLA_UF","SIGLA_UE","CODIGO_MUNICIPIO","NOME_MUNICIPIO","NUMERO_ZONA","CODIGO_CARGO","NUMERO_CAND","SQ_CANDIDATO","NOME_CANDIDATO","NOME_URNA_CANDIDATO","DESCRICAO_CARGO","COD_SIT_CAND_SUPERIOR","DESC_SIT_CAND_SUPERIOR","CODIGO_SIT_CANDIDATO","DESC_SIT_CANDIDATO","CODIGO_SIT_CAND_TOT","DESC_SIT_CAND_TOT","NUMERO_PARTIDO","SIGLA_PARTIDO","NOME_PARTIDO", "SEQUENCIAL_LEGENDA","NOME_COLIGACAO","COMPOSICAO_LEGENDA","TOTAL_VOTOS"))
+
+votacao_candidatoSP_2012
+```
+
+***Q3 Lendo o leaime.pdf e observando as variáveis no banco de dados, o que representa uma observação (uma linha)? Ou seja, qual a unidade de análise aqui?***
+
+A únidade de análise do banco de dados é a quantidade de votos que cada candidato recebeu por município e zona no estado de São Paulo no ano de 2012.
+
+***Q4 Leia até o final as instruções e identifique quais variáveis serão necessárias para o resto do exercício. Tire do seu banco de dados as variáveis desnecesárias.***
+
+```{r}
+#cleaning the dataset 
+
+votacao_candidatoSP_2012 <- votacao_candidatoSP_2012 %>%  select(-DATA_GERACAO,-HORA_GERACAO,-SQ_CANDIDATO,-DESCRICAO_CARGO,-COD_SIT_CAND_SUPERIOR,-DESC_SIT_CAND_SUPERIOR,-SEQUENCIAL_LEGENDA)
+
+votacao_candidatoSP_2012
+```
+
+***Q5 Selecione apenas as linhas que contém resultados eleitorais para o primeiro turno da eleição do prefeito(a).***
+
+```{r}
+votacao_candidatoSP_primeiroturno <- votacao_candidatoSP_2012 %>% filter(NUM_TURNO == 1)
+
+votacao_candidatoSP_primeiroturno
+```
+
+***Note que candidatos podem aparecer mais de uma vez na tabela em Q5 (porque existem múltiplas zonas em cada município). Usando identificadores únicos, identifique os candidatos distintos para o primeiro turno do prefeito. Explique no seu relatório quantos candidatos concorrem para prefeito no primeiro turno em 2012.***
+
+```{r}
+num_cand_primeiroturno <- votacao_candidatoSP_primeiroturno %>% distinct(NUMERO_CAND) %>% arrange(NUMERO_CAND)
+
+num_cand_primeiroturno
+
+```
+O número de candidatos que concorrem para prefeito no primeiro turno em 2012 é 9433 uma vez que depois de ter limpado o banco dada as condições
+ficaram apenas 9433 linhas.
+
+***No banco de dados de prefeitos no primeiro turno gerado na questão anterior, renomeie a variável com nome pouco claro DESC_SIT_CAND_TOT para RESTULADO***
+
+```{r}
+votacao_candidatoSP_primeiroturno <- votacao_candidatoSP_primeiroturno %>% rename(RESULTADO=DESC_SIT_CAND_TOT)
+
+votacao_candidatoSP_primeiroturno
+```
+
+***No banco de dados de prefeitos no primeiro turno gerado na questão anterior, filtrar os dados para os candidatos que se candidataram com Nome de Urna ígual ao seu Nome completo, e identifique os candidatos únicos de novo. No seu relatório, explique qual percentagem de todos os candidatos para prefeito no primeiro turno isso representa.***
+
+```{r}
+votacao_candidatoSP_primeiroturno %>% filter(NOME_URNA_CANDIDATO == NOME_CANDIDATO) %>% 
+  distinct(NOME_URNA_CANDIDATO)
+```
+Se tem um total de 3100 candidatos para prefeito no primeiro turno
+
+***Quantos dos candidatos identificados em Q8 foram eleitos no primeiro turno?***
+```{r}
+votacao_candidatoSP_primeiroturno %>% filter(NOME_URNA_CANDIDATO == NOME_CANDIDATO & RESULTADO == "ELEITO POR MÉDIA")
+
+#165 eleito por média 
+
+votacao_candidatoSP_primeiroturno %>% filter(NOME_URNA_CANDIDATO == NOME_CANDIDATO & RESULTADO == "ELEITO POR QP")
+
+#676 eleito por quociente de partido
+
+votacao_candidatoSP_primeiroturno %>% filter(NOME_URNA_CANDIDATO == NOME_CANDIDATO & RESULTADO == "ELEITO")
+
+#46 eleitos 
+ total_eleitos <- 46+676+165
+ 
+ total_eleitos
+#total 
+
+```
+Os candidatos identificados em Q8 eleitos no primeiro turno foram `total_eleitos` 
+
+***Voltando para os dados de todos os candidatos no primeiro turno, vamos focar a nossa análise no município de São Paulo (código do TSE 71072). Ordene os dados por número de votos e identifique qual candidato recebeu o maior número de votos em qualquer zona da cidade.***
+
+```{r}
+votacao_candidatoSP_primeiroturno %>% filter(NOME_MUNICIPIO == "SÃO PAULO") %>% arrange(TOTAL_VOTOS) 
+```
+
+***Usando a sua própria classificação, crie uma nova variável que descreve a ideologia de cada partido no banco de dados do município de São Paulo nas três categorias ‘Esquerda’, ‘Direita’ e ‘Outro’.***
+
+```{r}
+votacao_candidatoSP_2012 <- votacao_candidatoSP_2012 %>% mutate(IDEOLOGIA = case_when(SIGLA_PARTIDO=="PT"~ "Esquerda",
+                                                                  SIGLA_PARTIDO=="PMDB"~ "Direita",
+                                                                  SIGLA_PARTIDO=="PV" ~ "Outro"))
+
+votacao_candidatoSP_2012
+```
+
+***Criei uma variável que indica se o candidato no município de São Paulo recebeu mais de 10.000 votos na zona.***
+
+```{r}
+votacao_candidatoSP_2012 <- votacao_candidatoSP_2012 %>% mutate(MAIS_DE_10K = case_when(TOTAL_VOTOS > 10000 ~ "SIM",
+                                                                                        TOTAL_VOTOS < 10000 ~ "NÃO"))
+
+votacao_candidatoSP_2012
+```
+
+***Voltando para os dados orginais, filtrar para os dados dos vereadores. Agora, imagine que não temos os dados do partido de cada candidato e queremos recuperar do NUMERO_CAND, em que os primeiros dois digitos sempre refletem o número do partido do candidato. Divida a coluna NUMERO_CAND em duas para criar uma coluna de NUM_PARTIDO e outra de NUM_CAND_RESTANTE.***
+
+```{r}
+votacao_candidatoSP_2012 <- votacao_candidatoSP_2012 %>% separate(NUMERO_CAND, c("NUM_PARTIDO","NUM_CAND_RESTANTE"), sep = 2)
+
+votacao_candidatoSP_2012
+```
+
+***Agora, unifique as colunas NUM_PARTIDO e NUM_CAND_RESTANTE criado em Q9. O resultado deve ser ígual à coluna original NUMERO_CAND.***
+
+```{r}
+votacao_candidatoSP_2012 <- votacao_candidatoSP_2012 %>% unite("NUMERO_CAND", "NUM_PARTIDO","NUM_CAND_RESTANTE", sep = "")
+
+votacao_candidatoSP_2012
+```
+
