@@ -1,43 +1,47 @@
 ---
-title: "Exercise1_Viola"
+title: "Exercício1_2021"
 author: "André Viola"
-date: "2/14/2021"
-output: word_document
+date: "3/26/2021"
+output:
+   html_document:
+     df_print: paged
 ---
 
-**1.Comece um novo script de Rmarkdown e accesse o banco de dados gapminder no pacote dslabs. Estes dados descrevem as estatísticas resumidas para países do mundo desde 1960.**
-
-```{r, echo=FALSE, warning=FALSE}
-library("dslabs")
-observations <- nrow(gapminder)
-variables <- ncol(gapminder)
-```
-
-**2.Produza um mini-relatório com algumas frases curtas em HTML que descreva o banco de dados gapminder:**
-
-  **a-Número de observações:** O número de observações é `r observations`
- 
-  **b-Número e nomes das variáveis:** O número de variáveis é `r variables` e os nomes são country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region
- 
-  **c-O tipo de cada variável:** No banco se tem 3 Factor, 1 integer and 6 Double
-
-  **d-O que representa cada observação no banco de dados?** Países, Ano, Mortalidade Infantil, Expectativa de vida ao nascer, Fertilidade, População, PIB, Continente e Região.
-  
-**3.Verifique que as respostas 2(a) e 2(b) são calculadas automaticamente no relatório usando funções do R e in-line code para inserir as respostas numa frase**
-
-**4.Calcule o valor do número de observações multiplicado pelo número de colunas**
-
 ```{r, echo=FALSE}
-nrow(gapminder)*ncol(gapminder)
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
 ```
 
-**5. Inclua uma tabela do banco de dados gapminder no relatório.**
-```{r, echo=FALSE, warning=FALSE, include=FALSE}
-#install.packages("tidyverse")
-library("tidyverse")
-tabela_gapminder <- tibble(Country=c("Brazil","Japan","Lebanon","Australia"),
-                           Region=c("South America","Eastern Asia", "Middle East","Oceania"))
-```
 ```{r}
-tabela_gapminder
+install.packages("dslabs")
+library("dslabs")
+
+gapminder 
+
+obser <- nrow(gapminder)
+varia <- ncol(gapminder)
+
+multi <- obser*varia
 ```
+
+**Número de observações**
+
+O banco de dados possui `r obser` observações
+
+**Número de variáveis**
+
+O banco de dados possui `r varia` variáveis
+
+**Tipo de cada variável**
+
+O  banco possui variáveis discretas e contínuas
+
+**O que representa cada observação no banco de dados  ?**
+
+Cada observação do banco mostra estatísticas resumidas dos países do mundo desde 1960
+
+```{r}
+multi
+```
+

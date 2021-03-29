@@ -1,0 +1,69 @@
+---
+title: "Class_1"
+author: "André Viola"
+date: "3/26/2021"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+
+```{r}
+#installing the package and opening it
+library("nycflights13")
+
+```
+
+```{r}
+flights
+
+obs <- nrow(flights)
+vari <- ncol(flights)
+```
+**1-Quantas observações existem no banco de dados ?**
+
+No banco há `r obs` observações
+
+**2-Quantas variáveis existem no banco de dados?**
+
+No banco de dados há `r vari` variáveis
+
+**O que representa cada observação no banco de dados ?**
+
+Cada observação representa um voo que partiu de New York em 2013
+
+**Quais variáveis existem no banco de dados ?**
+
+Discretas e  Contínuas
+
+**Qual tipo de dado cada variável contem ?**
+
+Texto e número
+
+```{r}
+install.packages("tidyverse")
+library("tidyverse")
+
+sigla_aeroportos <- c("NWR","JFK","LGA")
+nome_aeroportos <- c("Newark","John F Kennedy","LaGuardia")
+
+
+tabela_aeroportos <- tibble(Sigla = sigla_aeroportos,
+                            Nome = nome_aeroportos)
+
+tabela_aeroportos
+```
+
+
+
+
+   
+
+
