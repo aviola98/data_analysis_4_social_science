@@ -81,3 +81,202 @@ View(dep0_dep6)
 sum(is.na(flights$dep_time))
 #what other variables are missing ?
 map_dbl(flights, ~ sum(is.na(.x)))
+
+#arrange
+
+arrange(flights, year, month, day)
+
+arrange(flights, desc(dep_delay))
+
+df <- tibble(x = c(5, 2, NA))
+arrange(df,x)
+
+#How could you use arrange to sort all missing 
+#values to the start ?
+
+df <- tibble(x = c(5,2,NA),
+             y = c(2, NA, 2))
+#sorting the values that are TRUE for NA to the start
+rowSums(df)
+arrange(df, desc(is.na(x)))
+arrange(df, -(is.na(x)))
+
+#sort flights to find the most delayed flights
+#find the flights that left earliest
+
+arrange(flights, dep_delay)
+arrange(flights, desc(dep_delay))
+
+#sort flights to find the fastest(highest speed) flights
+
+arrange(flights, air_time)
+
+#Which flights traveled the longest ? Which traveled the shortest ?
+#longest
+flights %>% 
+  arrange(air_time)%>%
+  select(carrier, flight, air_time)
+#shortest
+flights %>%
+  arrange(-air_time) %>%
+  select(carrier, flight, air_time)
+
+#select
+#select columns by name
+select(flights, year, month, day)
+#select all columns between year and day
+select(flights, year:day)
+#select all columns except those from year to day
+select(flights, -(year:day))
+
+#starts_with()
+#ends_with()
+#contains()
+#mathces()
+#num_range()
+
+#rename in order to rename variables
+
+rename(flights, tail_num = tailnum)
+
+#select + everything in order to move variables
+#to the start of the data frame
+
+select(flights, time_hour, air_time, everything())
+
+#exercises
+#Brainstorm as many ways as possible to select 
+#dep_time, dep_delay, arr_time, and arr_delay
+#from flights.
+
+#first way
+select(flights, dep_time, dep_delay, arr_time, arr_delay)
+
+#second way
+select(flights, starts_with(c("dep", "arr")))
+
+#third way
+
+select(flights, ends_with(c("delay","time")))
+
+#What does the any_of() function do? Why might it be helpful in conjunction with this vector?
+
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+select(flights, any_of(vars))
+
+#Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+
+select(flights, contains("TIME"))
+
+#mutate 
+#it creates new columns that are functions of
+#existing columns
+
+flights_sml <- select(flights,
+                      year:day,
+                      ends_with("delay"),
+                      distance,
+                      air_time
+                      )
+View(flights_sml)
+mutate(flights_sml,
+       gain = dep_delay - arr_delay,
+       speed = distance / air_time * 60
+       )
+
+mutate(flights_sml,
+       gain = dep_delay - arr_delay,
+       hours = air_time / 60,
+       gain_per_hour = gain / hours
+)
+
+#if you only want to keep the new variables 
+#use transmute()
+
+transmute(flights,
+          gain = dep_delay - arr_delay,
+          hours = air_time / 60,
+          gain_per_hour = gain / hours
+)
+
+#computing hour and minute from dep_time
+#using modular arithmetic 
+
+transmute(flights,
+          dep_time,
+          hour = dep_time %/% 100,
+          minute = dep_time %% 100)
+
+#Currently dep_time and sched_dep_time are
+#convenient to look at, but hard to compute with 
+#because they’re not really continuous numbers.
+#Convert them to a more convenient representation
+#of number of minutes since midnight.
+
+flights <- mutate(flights,
+                  dep_time_mins = dep_time %/% 100 * 60 + dep_time %% 100,
+                  sched_dep_time_mins = sched_dep_time %/% 100 * 60 +
+                    sched_dep_time %% 100)
+
+select(flights, starts_with('dep_time'), starts_with('sched'))
+#Compare air_time with arr_time - dep_time.
+#What do you expect to see? What do you see? 
+#What do you need to do to fix it?
+
+
+#air_time is the amount of time spent in  air in
+#minutes, and we should expect air_time to be
+#the same as arr_time - dep_time
+
+flights %>% 
+  mutate(flight_time = arr_time - dep_time) %>%
+  select(air_time, flight_time)
+
+#the difference between them is because
+#arr_time and dep_time are not continuos numbers
+#to remedy this we convert arr_time to minutes
+#since midnight same as previous question 
+
+flights <- mutate(flights, 
+                  arr_time_min = arr_time %/% 100 * 60 +
+                    arr_time %% 100)
+flights <- mutate(flights, flight_time = arr_time_min - dep_time_mins)
+
+select(flights, air_time, flight_time)
+
+#again air_time is different from the computed
+#flight_time, in fact, only 196 flights have the same 
+#air_time and computed flight_time
+
+sum(flights$air_time == flights$flight_time, na.rm = TRUE)
+
+#Compare dep_time, sched_dep_time, and dep_delay.
+#How would you expect those three numbers to be
+#related?
+
+select(flights, dep_time, sched_dep_time, dep_delay)
+
+#Find the 10 most delayed flights using a ranking
+#function. How do you want to handle ties?
+#Carefully read the documentation for min_rank().
+#min_rank() is equivalent to rank() method with 
+#the argument ties.method = 'min. It assigns 
+#every tied element to the lowest rank.
+
+head(arrange(flights, min_rank(desc(dep_delay))), 10)
+
+#5 – What does 1:3 + 1:10 return? Why?
+
+1:3 + 1:10
+
+#R performs vectorized calculations.
+#For example, when we add two vectors of the same
+#length together, c(1,2,3) + c(4,5,6), the result
+#will be c(5,7,9). When we add two vectors of
+#different lengths, the shorter vector with be 
+#‘repeated’ to match the length of the longer 
+#vector.
+
+
+
+
