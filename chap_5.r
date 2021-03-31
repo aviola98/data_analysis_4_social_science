@@ -277,6 +277,99 @@ head(arrange(flights, min_rank(desc(dep_delay))), 10)
 #‘repeated’ to match the length of the longer 
 #vector.
 
+#summarise
+#na.rm argument removes the missing values prior to computation
+summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
+#getting the average delay by date
+by_day <- group_by(flights, year, month, day)
+summarise(by_day, delay = mean(dep_delay, na.rm = TRUE))
+
+#pipe 
+#code without pipe
+#group flights by destination
+by_dest <- group_by(flights, dest)
+#summarise to compute distance,average delay and number of flights
+delay <- summarise(by_dest,
+                   count = n(),
+                   dist = mean(distance, na.rm = TRUE),
+                               delay = mean(arr_delay, na.rm = TRUE)
+                               )
+#filter to remove noisy points and Honolulu airport, which is almost twice as far away as the next closest airport
+
+delay <- filter(delay, count > 20, dest != "HNL")
+
+#plot
+ggplot(data = delay, mapping = aes(x = dist, y = delay)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
+#it shows that delays increase with distance up to
+#750 miles and then decrease
+
+#code with the pipe
+#read %>% as "then"
+
+delays <- flights %>% 
+  group_by(dest) %>%
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)
+  ) %>%
+  filter(count > 20, dest != "HNL")
+
+ggplot(data = delay, mapping = aes(x = dist, y = delay)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
 
 
+#applications of na.rm
 
+flights %>%
+  group_by(year, month, day) %>%
+  summarise(mean = mean(dep_delay, na.rm = TRUE))
+
+#First remove the missing flights
+#create a variable so that you can re-use it in the next examples
+
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+not_cancelled %>%
+  group_by(year, month, day) %>%
+  summarise(mean = mean(dep_delay))
+
+#counts
+#taking a look at the planes that have the highest
+#average delays
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarise(
+    delay = mean(arr_delay)
+  )
+
+ggplot(data = delays, mapping = aes(x=delay)) +
+  geom_freqpoly(binwidth = 10)
+
+#scatterplot of number of flights vs. average delay
+
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarise(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+
+ggplot(data = delays, mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)
+
+#unsurprisingly there is much greater variation in the average delay
+#when there are few flights
+#whenever you plot a mean (or other summary) vs. group size, you'll see
+#that the variation decreases as the sample size increases 
+
+#removing the smallest number of observartion
+
+delays %>%
+  filter(n > 25) %>%
+  ggplot(mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)
