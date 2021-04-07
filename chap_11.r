@@ -119,5 +119,48 @@ parse_time(t2, "%I:%M:%OS %p")
 
 
 #Parsing a file
+#fixing errors
+challenge <- read_csv(readr_example("challenge.csv"))
+#pulling out the problems
 
+problems(challenge)
+#working column by column until there are no problems remaining
 
+tail(challenge)
+#problems wwith the 
+#column, they are dates stored in a character vector
+
+#fixing the call 
+#changing the type of y into date
+challenge <- read_csv(
+  readr_example("challenge.csv"),
+  col_types = cols(
+    x = col_double(),
+    y = col_date()
+  )
+)
+
+#we could easily fix this problem if we'd looked at just one more row than the default
+
+challenge2 <- read_csv(readr_example("challenge.csv"), guess_max = 1001)
+
+challenge2
+
+#sometimes it is easier to diagnose problems if you just
+#read in all the columns as character vector
+
+challenge2 <- read_csv(readr_example("challenge.csv"),
+                       col_types = cols(.default = col_character()))
+
+#type_convert
+
+df <- tribble(
+  ~x, ~y,
+  "1", "1.21",
+  "2", "2.32",
+  "3", "4.56"
+)
+
+df
+#note the column types
+type_convert(df)
