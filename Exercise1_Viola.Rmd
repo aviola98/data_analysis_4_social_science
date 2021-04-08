@@ -3,8 +3,9 @@ title: "Exercício1_2021"
 author: "André Viola"
 date: "3/26/2021"
 output:
-   html_document:
-     df_print: paged
+  word_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r, echo=FALSE}
@@ -16,8 +17,6 @@ knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
 ```{r}
 install.packages("dslabs")
 library("dslabs")
-
-gapminder 
 
 obser <- nrow(gapminder)
 varia <- ncol(gapminder)
@@ -43,5 +42,6 @@ Cada observação do banco mostra estatísticas resumidas dos países do mundo d
 
 ```{r}
 multi
-```
 
+gapminder
+```
