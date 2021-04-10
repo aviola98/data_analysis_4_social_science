@@ -1,0 +1,54 @@
+---
+title: "example_2"
+author: "André Viola"
+date: "4/9/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+library("tidyverse")
+library("nycflights13")
+flights
+#renaming variable
+flights <- flights %>% rename(departure_time = dep_time)
+
+flights
+
+#select 
+
+flights %>% select(year, month, day)
+flights %>% select(-year)
+
+#mutate (creating new variables and adjusting variables)
+
+flights %>% mutate(atraso = departure_time-sched_dep_time)
+
+#slice
+
+flights %>% slice(5)
+flights %>% slice(5:10)
+
+#filter
+#seleciona linhas baseado no conteudo delas e nao em seu posicionamento
+
+flights %>% filter(month == 1)
+#all flights from february 10
+flights %>% filter(month == 2 & day == 10)
+
+#all flights before the departure time of 6am
+
+flights %>% filter(month == 2 & day == 10 & departure_time < 600)
+```
+
+```{r}
+#opening datasets
+dara <- read_csv("")
+
+```
+

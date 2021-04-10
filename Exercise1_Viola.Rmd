@@ -43,5 +43,5 @@ Cada observação do banco mostra estatísticas resumidas dos países do mundo d
 ```{r}
 multi
 
-gapminder
+(gapminder)
 ```

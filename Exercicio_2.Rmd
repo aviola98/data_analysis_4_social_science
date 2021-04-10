@@ -1,0 +1,14 @@
+---
+title: "Exercicio_2"
+author: "André Viola"
+date: "4/9/2021"
+output: html_document
+---
+
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
