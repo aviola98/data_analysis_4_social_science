@@ -2,7 +2,9 @@
 title: "Exercicio_2"
 author: "André Viola"
 date: "4/9/2021"
-output: html_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 
@@ -10,5 +12,102 @@ output: html_document
 
 knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
 
+```
+
+```{r}
+library("tidyverse")
+library("tidylog")
+library("nycflights13")
+```
+
+```{r}
+flights
+names(flights)
+```
+```{r}
+#reneame
+flights_renamed <- flights %>% rename(arrival_time = arr_time)
+flights <- flights %>% rename(arrival_time=arr_time)
+#renaming multiple variables
+flights <- flights %>% rename (destination = dest, 
+                               arrival_delay = arr_delay,
+                               departure_delay=dep_delay)
+
+```
+
+```{r}
+#select
+flights %>% select(year, month, day)
+```
+
+```{r}
+#mutate
+#creating a new variable based on existing ones
+flights <-flights %>% mutate(dep_delay_double = departure_delay*2)
+#changing an existing variable
+flights <- flights %>% mutate(departure_delay=departure_delay*60)
+#changing a variable using functions (in this case we use tolower to change the vairable origin from upper case to lower case)
+
+flights <- flights %>% mutate(origin = tolower(origin))
+
+```
+
+```{r}
+#slice
+#limiting our observations to just the fith line of the dataset
+
+flights %>% slice(5)
+#selecting the first five lines 
+
+flights %>% slice(1:5)
+```
+
+```{r}
+#numeric sets
+#in order to select the observations we have to create a vector with the positions of the wanted elements
+wanted_lines <- c(1,4,5,8,22,169)
+#then we proceed by using this vector, calling it by name, inside the function slice
+flights %>% slice(wanted_lines)
+#we can also select the non-wanted observations inserting the "-" signal in front of the number
+flights %>% slice(-1)
+#for a set of numbers we use : in order to indicate a sequential set of numbers 
+flights %>% slice(10:20)
+#for more systematic non-sequential sets we can use the function seq() 
+#it has three parameters: initial value (from),final value(to) and an increment (by)
+flights %>% slice(seq(from=1,
+                      to=100,
+                      by=10))
+#or
+flights %>% slice(seq(1,100,10))
+```
+
+
+```{r}
+#filter
+#variable name +operation+criteria
+flights_july <-flights %>% filter(month == 6)
+#we can combine criteria using the symbol &
+flights_july_5 <- flights %>% filter(month == 6 & day == 5)
+#including < or > we can generate comparisons 
+flights_july_5_morning <- flights %>% filter(month == 6 & day == 5 & departure_time < 1200)
+
+#all the flights that delayed for more than 50 minutes and departed before 5 a.m. or that arrived in Atlanta(ATL)
+
+flights %>% filter((departure_time<=500 | destination == "ATL") & arrival_delay>=50)
+
+#asking the opposite with the ! symbol
+
+flights %>% filter(!((departure_time<=500 | destination == "ATL") & arrival_delay>=50))
+
+```
+
+```{r}
+#combining manipulations
+
+flights %>% 
+  rename(arrival_time=arr_time) %>%
+  mutate(departure_delay=departure_delay*60) %>%
+  filter(month == 6 & day == 5) %>%
+  select(year,month,day,arrival_time,departure_delay)
 ```
 

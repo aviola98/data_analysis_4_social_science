@@ -1,0 +1,61 @@
+---
+title: "Exercicio1_Aula2"
+author: "André Viola"
+date: "4/12/2021"
+output: 
+  html_document:
+    df_print: paged
+---
+
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+**os voos da united(carrier UA) que decolaram no dia 25 de janeiro**
+```{r}
+library(tidyverse)
+library(nycflights13)
+
+flights
+flights %>% filter(carrier == "UA" & 
+                     month == 1 &
+                     day == 25)
+```
+
+**Os voos de JetBlue (carrier B6) que decolaram com mais de 300 minutos de atraso de Newark (origin EWR).**
+```{r}
+flights %>% filter(carrier == "B6" &
+                     departure_delay > 300 &
+                     origin == "ewr")
+```
+
+**Calcule a velocidade dos voos que decolaram de LaGuardia (origin LGA) no dia 7 de setembro antes das 6h. Lembre-se que velocidade é a distância dividida por tempo. (Qual é a unidade desta velocidade?)**
+
+```{r}
+flights %>% filter(origin == "lga" &
+                     day == 7 &
+                     month == 9 &
+                     departure_time < 600) %>%
+  mutate(speed=distance/air_time)
+```
+***Uma tabela com apenas o atraso na chegada de todos os voos atrasados por pelo menos 60 minutos que partiram do aeroporto Newark e chegaram em Buffalo (BUF) no dia seis de todos os meses.***
+
+```{r}
+flights %>% filter(destination == "BUF" & 
+                     origin == "ewr" & 
+                     arrival_delay >= 60 &
+                     day == 6) %>% 
+  select(arrival_delay)
+
+```
+
+***Uma tabela dos números dos aviões (tailnum), destino, distância e a velocidade em milhas por hora para voos que voaram em maio pelo menos 1000 milhas ou com velocidade acima de 500 milhas por hora.***
+
+```{r}
+flights %>% mutate(velocidade = distance/(air_time/60)) %>% 
+  filter((distance > 1000 | velocidade >500) & month == 5) %>%
+  select(tailnum, destination, distance, velocidade)
+```
+
