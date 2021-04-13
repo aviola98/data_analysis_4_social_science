@@ -1,0 +1,44 @@
+---
+title: "Exercicio3_Aula2"
+author: "André Viola"
+date: "4/13/2021"
+output:
+   html_document:
+     df_print: paged
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+***Use o arquivo leiame.pdf que fica no zip com o arquivo do TSE para identificar o encoding dos dados, e os nomes das variáveis. Incorpore esta informação na abertura do arquivo.***
+```{r}
+votacao_partido_munzona_BA2006 <- read_delim("votacao_partido_munzona_2006_BA.txt",
+                                           col_names=c("DATA_GERACAO","HORA_GERACAO","ANO_ELEICAO","NUM_TURNO","DESCRICAO_ELEICAO","SIGLA_UF","SIGLA_UE","CODIGO_MUNICIPIO","NOME_MUNICIPIO","NUMERO_ZONA","CODIGO_CARGO","DESCRICAO_CARGO","TIPO_LEGENDA","NOME_COLIGACAO","COMPOSICAO_LEGENDA","SIGLA_PARTIDO","NUMERO_PARTIDO","NOME_PARTIDO","QTDE_VOTOS_NOMINAIS","QTDE_VOTOS_LEGENDA","SEQUENCIAL_COLIGACAO"),
+                                           delim=";",
+                                           local=locale(encoding="latin1"),
+                                           )
+```
+***Crie uma tabela bonita em R Markdown dos dados do TSE, e verifique que o número de colunas e observações fazem sentido.***
+
+```{r}
+votacao_partido_munzona_BA2006
+```
+***Tente manipular a base utilizando as funções que aprendemos no tutorial de hoje para selecionar colunas e observações específicas.***
+```{r}
+#renomeando NUM_TURNO para NUMERO_TURNO
+
+votacao_partido_munzona_BA2006 <- votacao_partido_munzona_BA2006 %>% rename(NUMERO_TURNO=NUM_TURNO)
+
+#filtrando dados para Alagoinhas , cargo deputado estaudal, sigla partido e voto legenda
+
+votacao_partido_munzona_Alagoinhas2006 <- votacao_partido_munzona_BA2006 %>%
+  filter(NOME_MUNICIPIO == "ALAGOINHAS" &
+           DESCRICAO_CARGO == "DEPUTADO ESTADUAL") %>%
+  select(NOME_MUNICIPIO,DESCRICAO_CARGO,SIGLA_PARTIDO,QTDE_VOTOS_LEGENDA)
+
+
+```
+
+

@@ -111,3 +111,89 @@ flights %>%
   select(year,month,day,arrival_time,departure_delay)
 ```
 
+```{r}
+library(tidyverse)
+#opening data 
+
+#opening online links
+#saving the url of the link and then opening it
+file1 <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/bf_amostra_hv.csv"
+
+dados <- read_csv(file1)
+
+#read_delim gives us more flexibility to deal with uncommon files
+#e.g. by default we use comma on read_csv but data in Brazil is separated by a ; because comma in Brazil is a decimal separator
+
+dados <- read_delim(file1,
+                    delim = ",")
+
+
+file_semi_colon <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/bf_amostra_hp.csv"
+dados <- read_delim(file_semi_colon,
+                    delim = ";")
+
+file_tab <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/bf_amostra_ht.csv"
+dados<- read_delim(file_tab,
+                   delim="\t")
+
+#the pattern of read_delim is to import the first line as the name of the variables, if our data do not have a header the first line of data will wrongly become the name of the variables . 
+#In order to fix this problem we use the argument col_names which must be equal to FALSE for the data stored without column names
+
+file_sem_header <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/bf_amostra_nv.csv"
+
+dados <- read_delim(file_sem_header,
+                  col_names = F,
+                  delim= ",")
+
+#we can also put the name of the columns as an argument
+
+dados <- read_delim(file_sem_header,
+                    col_names=c("estado","municipio_cod","municipio_nome",
+                                "NIS","transferido"),
+                    delim=",")
+
+#sometimes it is good to define the class of the imported variables in order to avoid new transformations once they are imported. The argument col_types must be a sequence of of character where c = character, d=double, L=logical, i=integer 
+dados <- read_delim(file1, 
+                    delim = ",", 
+                    col_types = "cicid")
+#using locale in order to specify some characteristics
+
+dados <- read_delim(file1,
+                    delim=",",
+                    locale=locale(decimal_mark=",", grouping_mark="."))
+#encoding
+dados <- read_delim(file1,
+                    delim=",",
+                    local=locale(encoding="latin1"))
+
+```
+
+```{r}
+#excel data
+library(readxl)
+
+excel_sheets("Base 2005.xls")
+
+
+#importing the variables from "variaveis exernas"
+#1
+externas <- read_excel("Base 2005.xls","Variáveis externas")
+#2
+externas <- read_excel("Base 2005.xls",11)
+```
+```{r}
+#SPSS and STATA data
+
+library("haven")
+#read_sas SAS
+#read_stata STATA
+#read_dta STATA
+#read_sav SPSS
+#read_por SPSS
+
+latino_barometro_SPSS <- read_spss("Latinobarometro_2015_Eng.sav")
+
+latino_barometro_stata <- read_stata("Latinobarometro_2015_Eng.dta")
+
+```
+
