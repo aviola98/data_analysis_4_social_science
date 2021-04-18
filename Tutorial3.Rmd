@@ -1,0 +1,251 @@
+---
+title: "Tutorial3"
+author: "André Viola"
+date: "4/16/2021"
+output: html_document
+---
+
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+library("tidyverse")
+library("nycflights13")
+```
+
+
+```{r}
+#separate
+
+ex_separate <- tibble(ID=1:3,
+                      Mes_Ano=c("jan2013","mar2009","out2015"))
+#separing after the third character
+ex_separate %>% separate(Mes_Ano, c("Mes","Ano"), 3)
+
+#if you want to keep the original variable add the remove=FALSE argument 
+
+
+ex_separate_2 <- tibble(ID=1:3,
+                      Mes_Ano=c("janeiro_2013","marco_2009","outobro_2015"))
+#separing after the "_" symbol
+ex_separate_2 %>% separate(Mes_Ano, c("Mes","Ano"), "_")
+```
+
+```{r}
+#unite
+
+ex_separate_3 <- ex_separate_2 %>% 
+  separate(Mes_Ano, c("Mes","Ano"), "_")
+
+ex_separate_3 %>% unite("Mes_Ano", c(Mes,Ano))
+
+#specifing the unifier
+
+ex_separate_3 %>% unite("Mes_Ano", c(Mes,Ano), sep=",")
+```
+
+```{r}
+#recoding variables
+
+ex_recodificar <- tibble(ID=1:3,
+                         Mes=c("janeiro","february","outubro"),
+                         Ano=c(2013,2009,2015))
+#changing february into fevereiro
+#localizing the relevant case
+#specify the new value
+
+#mutate + case_when
+
+ex_recodificar %>% mutate(Mes=case_when(Mes=="february"~"fevereiro",
+                                        TRUE~Mes))
+
+ex_recodificar %>% mutate(Nova_Variavel=case_when(Ano>=2014~"Sim",
+                                                  Ano<2014 & Mes=="janeiro"~Mes,
+                                                  Ano<2014 & Mes=="february"~"Não"))
+```
+```{r}
+#EX 1
+#Cleaning Data
+
+flights
+
+#Crie uma data completa numa variável única, com o formato “day-month-year”.
+
+flights %>% unite("day_month_year", day, month, year)
+
+#Divida a variável time_hour em duas: uma variável de time e a outra variável de hour.
+
+flights %>% separate(time_hour, c("time","hour"), 10)
+
+#Recodifique a variável dep_delay para uma variável binária, que seja 1 quando tem atraso, e 0 quando não tem atraso (valores negativos significam decolagens antes do horário previsto).
+
+flights %>% mutate(departure_delay=case_when(departure_time>0~1,
+                                             departure_time<=0~0))
+
+#A companhia aérea US Airways (código ‘US’) se fundiu com American Airlines (código ‘AA’) em 2015. Recodifique voos de US Airways como voos de American Airlines.
+
+flights %>% mutate(carrier=case_when(carrier=="US" ~ "AA" ))
+```
+
+
+```{r}
+#arrange
+
+ex_arrange <- tibble(ID=1:10,
+                     Ano=c(2008, 2005, 2009, 2006, 2006, 2007, 2008, 2005, 2008, 2005),
+                     Mes=c("Abril","Novembro","Julho","Março","Novembro","Fevereiro",
+                           "Junho","Novembro","Janeiro","Outubro"),
+                     Valor=c(750,800,300,500,850,450,600,450,700,350))
+
+ex_arrange
+
+#ordering by year and value
+
+ex_arrange %>% arrange(Ano,Valor)
+#ordering values by descrescenting value
+ex_arrange %>% arrange(-Valor)
+```
+
+```{r}
+#top 5 
+ex_arrange %>% top_n(5, Valor)
+
+#smallest 5 values
+
+ex_arrange %>% top_n(-5,Valor)
+
+#proportion of desidered values
+#the biggest 30% observations
+ex_arrange %>% top_frac(0.3, Valor)
+```
+
+
+```{r}
+#Time-Series
+
+#lag calcules the value of an observation in the former year
+#we need , first, to cronologically order the data using arrange
+
+ex_arrange %>%
+  arrange(Ano) %>%
+  mutate(Valor_anterior=lag(Valor))
+
+#calculating Valor-Valor_anterior in order to analyze changing over time in the variable
+
+ex_arrange %>% 
+  mutate(Valor_anterior=lag(Valor),
+         Valor_diferenca=Valor-Valor_anterior)
+
+#lead is almost the same as lag but it calcules the following value
+
+ex_arrange %>% arrange(Ano) %>%
+  mutate(Valor_posterior=lead(Valor))
+
+
+```
+
+```{r}
+#EX 2 
+#Ordering
+flights
+
+#Ordene o banco de dados da menor à maior duração (air_time), incluindo apenas os voos com destino de Anchorage (ANC).
+flights %>% arrange(-air_time) %>% filter(destination=="ANC")
+
+#Identifique o voo mais atrasado (dep_delay) entre LaGuardia (LGA) e Atlanta (ATL). Quão atrasado foi o voo?
+
+flights %>% filter(origin == "lga" & destination == "ATL") %>% top_n(1, departure_delay)
+
+#Calcule a velocidade de cada voo, e selecione os três voos mais rápidos. Eles partiram de qual aeroporto para qual destino?
+
+flights  %>% 
+  mutate(Velocidade=distance/air_time) %>%
+  top_n(3, Velocidade)
+  
+#Para os voos com destino em Anchorage (ANC), verifique que eles são ordenados cronologicamente (por year, month, day, e dep_time) e gera uma nova variável com a duração (air_time) do voo anterior. Agora, compare a duração de cada voo com a duração do voo anterior.
+flights %>% 
+  filter(destination == "ANC") %>%
+  arrange(year,month,day,departure_time) %>%
+  mutate(lag_air_time = lag(air_time))
+  
+
+```
+
+```{r}
+#factors
+ex_arrange <- tibble(ID = 1:10, Ano = c(2008, 2005, 2009, 2006, 2006, 2007, 
+    2008, 2005, 2008, 2005), Mes = factor(c("Abril", "Novembro", "Julho", 
+    "Março", "Novembro", "February", "Junho", "Novembro", "Janeiro", "Outubro"), 
+    levels = c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")), 
+    Valor = c(750, 800, 300, 500, 850, 450, 600, 450, 700, 350))
+
+#or
+
+ex_arrange <- tibble(ID = 1:10, Ano = c(2008, 2005, 2009, 2006, 2006, 2007, 
+    2008, 2005, 2008, 2005), Mes = c("Abril", "Novembro", "Julho", "Março", 
+    "Novembro", "February", "Junho", "Novembro", "Janeiro", "Outubro"), 
+    Valor = c(750, 800, 300, 500, 850, 450, 600, 450, 700, 350))
+ex_arrange <- ex_arrange %>% mutate(Mes=factor(Mes))
+
+#better
+
+ex_arrange <- tibble(ID = 1:10, Ano = c(2008, 2005, 2009, 2006, 2006, 2007, 
+    2008, 2005, 2008, 2005), Mes = c("Abril", "Novembro", "Julho", "Março", 
+    "Novembro", "February", "Junho", "Novembro", "Janeiro", "Outubro"), 
+    Valor = c(750, 800, 300, 500, 850, 450, 600, 450, 700, 350))
+
+ex_arrange <- ex_arrange %>% mutate(Mes = factor(Mes, levels = c("Janeiro", 
+    "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", 
+    "Setembro", "Outubro", "Novembro", "Dezembro")))
+
+#ordering a factor
+
+ex_arrange <- tibble(ID = 1:10, Ano = c(2008, 2005, 2009, 2006, 2006, 2007, 
+    2008, 2005, 2008, 2005), Mes = factor(c("Abril", "Novembro", "Julho", 
+    "Março", "Novembro", "Fevereiro", "Junho", "Novembro", "Janeiro", "Outubro"), 
+    levels = c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"), 
+    ordered = T), Valor = c(750, 800, 300, 500, 850, 450, 600, 450, 700, 
+    350))
+
+#now we can use the data per year and month
+
+ex_arrange %>% arrange(Ano, Mes)
+```
+
+```{r}
+#complete
+
+#a consistent calculus must reflect the missing data explicitely
+
+#we can create a complete sequence if the original variables were rightly created as factors
+
+ex_arrange %>% complete(Ano,Mes)
+
+#fill 
+
+ex_arrange %>% complete(Ano, Mes, fill=list(Valor=0))
+
+#NA
+#is.na() tests wether a value is NA or not
+#NA_character_, NA_real_, NA_Integer_ create new NA values with its appropriate version
+#replace_na() replaces NA with another value
+ex_arrange %>% complete(Ano, Mes, fill=list(Valor=0)) %>%
+  mutate(ID_NA=case_when(is.na(ID)~1,
+                         TRUE~0),
+         Valor=case_when(Valor==0~NA_real_,
+                         TRUE~Valor),
+         ID=replace_na(ID, "Desconhecido"))
+```
+
+
+
+
+
+
+

@@ -1,0 +1,52 @@
+---
+title: "Class3"
+author: "André Viola"
+date: "4/16/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+
+```{r}
+library("tidyverse")
+library("nycflights13")
+```
+
+
+```{r}
+flights %>% mutate(dep_on_time=case_when(departure_time<=sched_dep_time ~ 1,
+                                         departure_time>sched_dep_time ~ 0))
+```
+
+
+```{r}
+flights %>% unite("Atalho", carrier, flight)
+```
+
+
+
+```{r}
+flights %>% arrange(-departure_delay) %>% slice(1)
+
+flights %>% top_n(2, departure_delay)
+```
+
+```{r}
+facto é um tipo de dado que restringe as possibilidades
+
+definir como fagtor
+#transformar a variavel em um fator e restringe a variavel para os valores
+flights %>% mutate(origin=factor(origin,
+                                 levels=c("ewr","lga","jfk")))
+
+flights %>% mutate(month=factor(month,
+                                levels=c(1,2,3,4,5,6,7,8,9,10,11,12),
+                                ordered=T))
+
+```
+
