@@ -1,0 +1,214 @@
+---
+title: "Relatório Desafio 1"
+author: "Aluno: André Viola"
+date: "4/29/2021"
+output: 
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+#abrindo as libraries necessárias
+library(tidyverse)
+library(readr)
+library(knitr)
+library(dplyr)
+```
+#### Número USP: 10325940
+#### Disciplina: FLS6397
+#### Professor: Jonathan Peter Phillips
+
+**Com a finalidade de não sobrecarregar o "knit" escolhi apresentar apenas as tabelas que dizem respeito ao (I) Banco de Dados original,(II, III, IV e V) as listas com os nomes dos candidatos,(VI) o Banco de Dados modificado com as variáveis novas, no caso "IDEOLOGIA" E "MAIS_DE_10K", e (VII e VIII) as junções e desjunções referentes à variável NUMERO_CAND**
+
+## I-Banco de dados das eleições municipais do Estado de São Paulo de 2012 (original)
+
+```{r}
+#abrindo o arquivo referente ao Estado de São Paulo com os nomes de colunas e o encoding corretos de acordo com a seção relevante de leiame.pdf
+
+votacao_candidato_munzona_2012_SP <- read_delim("votacao_candidato_munzona_2012_SP.txt",
+                                                delim = ";",
+                                                locale=locale(encoding="latin1"),
+                                                col_names = c("DATA_GERACAO","HORA_GERACAO",
+                                                "ANO_ELEICAO","NUM_TURNO",
+                                                "DESCRICAO_ELEICAO","SIGLA_UF","SIGLA_UE",
+                                                "CODIGO_MUNICIPIO","NOME_MUNICIPIO",
+                                                "NUMERO_ZONA","CODIGO_CARGO",
+                                                "NUMERO_CAND","SQ_CANDIDATO",
+                                                "NOME_CANDIDATO","NOME_URNA_CANDIDATO",
+                                                "DESCRICAO_CARGO","COD_SIT_CAND_SUPERIOR",
+                                                "DESC_SIT_CAND_SUPERIOR",
+                                                "CODIGO_SIT_CANDIDATO","DESC_SIT_CANDIDATO",
+                                                "CODIGO_SIT_CANDIDATO_TOT",
+                                                "DESC_SIT_CAND_TOT","NUMERO_PARTIDO",
+                                                "SIGLA_PARTIDO","NOME_PARTIDO",
+                                                "SEQUENCIAL_LEGENDA","NOME_COLIGACAO",
+                                                "COMPOSICAO_LEGENDA","TOTAL_VOTOS"))
+votacao_candidato_munzona_2012_SP
+```
+
+
+#### No banco de dados para Votação de Candidato para Município e Zona do Estado de São Paulo de 2012 cada observação (linha) representa informações dos valores de uma variável, no caso a unidade de análise diz respeito à votação nominal de cada candidato(a) nas eleições municipais no Estado de São Paulo no ano de 2012.
+
+```{r}
+#removendo variáveis desnecessárias para o exercício
+
+votacao_candidato_munzona_2012_SP_renovado <- votacao_candidato_munzona_2012_SP %>%
+  select(-ANO_ELEICAO,-DESCRICAO_ELEICAO,-SIGLA_UF,-CODIGO_SIT_CANDIDATO,-CODIGO_SIT_CANDIDATO_TOT,-CODIGO_SIT_CANDIDATO,-DATA_GERACAO,-HORA_GERACAO,-SQ_CANDIDATO,-COD_SIT_CAND_SUPERIOR,-SEQUENCIAL_LEGENDA,-NOME_COLIGACAO,-COMPOSICAO_LEGENDA)
+```
+
+
+```{r}
+#selecionando apenas as linhas que contem os resultados eleitorais para o primeiro turno
+#da eleição do prefeito(a)
+
+#criei uma nova tabela a qual adicionei o termo "renovado" no final para indicar o status de nova tabela, uma vez que nos dois exercícios finais se deve retornar aos dados originais.
+votacao_candidato_munzona_2012_SP_renovado <- votacao_candidato_munzona_2012_SP_renovado %>% filter(NUM_TURNO == 1 &
+                                                        DESCRICAO_CARGO == "PREFEITO")
+
+```
+
+## II-Candidatos à prefeito no primeiro turno 
+```{r}
+#identificando os candidatos distintos e exclusivos para o primeiro turno de prefeito
+
+#se como a tabela "renovado" já contem apenas o resultado do primeiro turno para prefeito apenas, não é necessário repetir o "filter"
+
+ 
+votacao_candidato_munzona_2012_SP_renovado %>% 
+  distinct(NOME_CANDIDATO) %>% 
+  arrange(NOME_CANDIDATO)
+
+```
+
+#### No primeiro turno para prefeito em São Paulo no ano de 2012 concorreram **2026** candidatos.
+
+
+
+```{r}
+#renomeando a variavel DESC_SIT_CAND_TOT para RESULTADO no banco gerado na questão anterior
+votacao_candidato_munzona_2012_SP_renovado <- votacao_candidato_munzona_2012_SP_renovado %>% rename(RESULTADO = DESC_SIT_CAND_TOT)
+
+```
+
+## III-Candidatos com Nome de Urna igual ao Nome Verdadeiro 
+```{r}
+#Q8
+#filtrando os dados para os candidatos que se candidataram com o Nome de Urna igual ao Nome Verdadeiro e identificando os casos unicos
+
+votacao_candidato_munzona_2012_SP_renovado %>% 
+  filter(NOME_URNA_CANDIDATO==NOME_CANDIDATO) %>%
+  distinct(NOME_URNA_CANDIDATO) %>%
+  arrange(NOME_URNA_CANDIDATO)
+
+#calculando a porcentagem que os candidatos que se candidataram com o nome de urna igual ao nome de candidato representam em relação ao total de candidatos
+
+#o numero total de candidatos com nome de urna igual ao proprio nome é 116, já o total de candidatos é 2026 (considerando nomes únicos) 
+
+porcentagem_nomes <- (116*100)/2026
+```
+
+#### O número de candidatos que se candidataram com o nome de urna igual ao verdadeiro nome representa uma porcentagem de **`r porcentagem_nomes` %** com relação ao total de candidatos a prefeito.
+
+
+## IV-Candidatos a prefeito eleitos no primeiro turno
+```{r}
+#identificando os candidatos eleitos no primeiro turno
+votacao_candidato_munzona_2012_SP_renovado %>% filter(NOME_URNA_CANDIDATO==NOME_CANDIDATO & RESULTADO == "ELEITO") %>% distinct(NOME_URNA_CANDIDATO, RESULTADO)%>%arrange(NOME_URNA_CANDIDATO)
+
+```
+
+#### Foram eleitos **39** candidatos no primeiro turno dos identificados na Q8.
+
+
+## V-Candidatos que mais receberam votos no municipio de São Paulo
+```{r}
+#filtrando os dados para o municipio de SP a partir de seu código do TSE  e ordenando os dados por número de votos
+votacao_candidato_munzona_2012_SP_renovado %>%
+  filter(CODIGO_MUNICIPIO == 71072 & NUM_TURNO == 1) %>%
+  arrange(-TOTAL_VOTOS)
+
+#ou alternativamente ...
+
+#votacao_candidato_munzona_2012_SP_renovado %>%
+ # filter(CODIGO_MUNICIPIO == 71072 & NUM_TURNO == 1) %>%
+ # top_n(1,TOTAL_VOTOS) 
+```
+
+#### O candidato que recebeu o maior número de votos em uma zona eleitoral foi **José Serra** do **Partido da Social Democracia Brasileira (PSDB)** com **84886** votos. Sendo assim, a Zona Eleitoral que recebeu o maior número de votos foi a Zona número **258**.
+
+
+```{r}
+#criando uma variavel que descreve a ideologia de cada partido com base nos meus critérios
+votacao_candidato_munzona_2012_SP_renovado <- votacao_candidato_munzona_2012_SP_renovado %>% 
+  mutate(IDEOLOGIA = case_when(SIGLA_PARTIDO == "PT" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PTB" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PV" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PC do B" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PSB" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PT do B" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PTN" ~"Esquerda",
+                               SIGLA_PARTIDO == "PPL" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PRTB" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PMN" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PDT" ~ "Esquerda",
+                               SIGLA_PARTIDO == "PSDB" ~ "Direita",
+                               SIGLA_PARTIDO == "DEM" ~ "Direita",
+                               SIGLA_PARTIDO == "PRB" ~ "Direita",
+                               SIGLA_PARTIDO == "PSC" ~ "Direita",
+                               SIGLA_PARTIDO == "PSDC" ~ "Direita",
+                               SIGLA_PARTIDO == "PP" ~ "Direita",
+                               SIGLA_PARTIDO == "PSL" ~ "Direita",
+                               SIGLA_PARTIDO == "PRP" ~ "Direita",
+                               SIGLA_PARTIDO == "PTC" ~ "Direita",
+                               SIGLA_PARTIDO == "PR" ~ "Direita",
+                               SIGLA_PARTIDO == "PPS" ~ "Outro",
+                               SIGLA_PARTIDO == "PMDB" ~ "Outro",
+                               SIGLA_PARTIDO == "PSD" ~ "Outro",
+                               SIGLA_PARTIDO == "PHS" ~ "Outro"))
+
+
+```
+
+```{r}
+#criando uma variável binária 0 ou 1, no qual 1 significa que o candidato recebeu mais de 10.000 votos e 0 significa que ele recebeu menos do que isso
+votacao_candidato_munzona_2012_SP_renovado <- votacao_candidato_munzona_2012_SP_renovado %>% 
+  mutate(MAIS_DE_10K = case_when(TOTAL_VOTOS > 10.000 ~ 1,
+                               TOTAL_VOTOS < 10.000 ~ 0))
+
+
+```
+
+
+## VI-Tabela filtrada com dados para primeiro turno de prefeito, com a variável RESULTADO ao invés de DESC_SIT_CAND_TOT e com as colunas referentes à ideologia dos partidos e à variável que indica que um candidato recebeu mais de 10.000 votos
+```{r}
+votacao_candidato_munzona_2012_SP_renovado
+```
+
+
+## VII-NUMERO_CAND separado em NUM_PARTIDO e NUM_CAND_RESTANTE (Tabela filtrada apenas para candidatos para cargo de Vereador)
+```{r}
+#Filtrando os dados para apenas os candidatos a vereador e, em seguida, usando separate para pegar a coluna NUMERO_CAND e dividi-la em NUM_PARTIDO e NUM_CAND_RESTANTE, sendo que os primeiros 2 digitos representam o número do partido, logo são usados como separador
+
+#foi criada uma nova base de dados para facilitar o trabalho, chamei-a de Q9
+
+Q9 <- votacao_candidato_munzona_2012_SP %>% 
+  filter(DESCRICAO_CARGO == "VEREADOR") %>%
+  separate(NUMERO_CAND, c("NUM_PARTIDO","NUM_CAND_RESTANTE"), 2)
+
+Q9
+```
+
+## VIII-Juntando a variável NUMERO_CAND novamente (Tabela filtrada apenas para candidatos para cargo de Vereador)
+```{r}
+#usando unite para juntar as colunas criadas na questão anterior 
+Q9 <- Q9 %>%
+  unite("NUMERO_CAND",c(NUM_PARTIDO,NUM_CAND_RESTANTE), sep = "")
+
+Q9
+```
