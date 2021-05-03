@@ -1,0 +1,268 @@
+---
+title: "Tutorial_4"
+author: "André Viola"
+date: "5/1/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+#summarize (it generates a small tibble with the general statistics of the dataframe)
+
+library(nycflights13)
+library(tidyverse)
+library(tidylog)
+
+
+flights %>% summarize(mean_distance=mean(distance))
+
+flights %>% summarize(mean_distance=mean(distance),
+                      median_distance=median(distance),
+                      sd_distance=sd(distance))
+```
+
+```{r}
+#pull (it transform the variable in a tibble into a vector)
+
+statistics <- flights %>% summarize(mean_distance=mean(distance),
+                                    median_distance=median(distance),
+                                    sd_distance=sd(distance))
+
+mean_distance <- statistics %>% pull(mean_distance)
+
+```
+
+The mean distance of the flights is `r mean_distance` 
+
+```{r}
+#ignoring NAs (adding na.rm=TRUE)
+
+flights %>% summarize(departure_delay=mean(departure_delay,na.rm=TRUE))
+
+```
+
+```{r}
+#new functions
+#format
+
+#function_name <- function(insume1,insume2) {
+#   result <- ......
+
+#    return(result)
+
+#}
+
+#function to calculate the reason  between the percentile 90 and the percentile 10
+
+percentile_90_10 <- function(variavel) {
+  calculus <- quantile(variavel, probs=0.9, na.rm=T)/
+    quantile(variavel, probs=0.1,na.rm=T)
+  
+  
+  return(calculus)
+  
+}
+
+#variavel is used as a reference to any vector(column) that the user will specify as insume in the future
+
+
+#applying a function
+
+flights %>% summarize(percentile_90_10_distance=percentile_90_10(distance),
+                      percentile_90_10_air_time=percentile_90_10(air_time))
+
+
+
+#there is more variation in the variable distance than in the variable air_time
+
+```
+
+
+```{r}
+#group_by
+
+flights_by_airport <- flights %>% group_by(origin)
+flights_by_airport
+
+
+#combining group_by with a subsequent function
+#calculating de mean distance by airport
+flights %>% group_by(origin) %>%
+  summarize(mean_distance=mean(distance))
+
+#using vatious arguments
+
+flights %>% group_by(origin,month) %>%
+  summarize(mean_distance=mean(distance))
+
+flights %>% group_by(origin,month) %>%
+  summarize(mean_distance=mean(distance)) %>%
+  filter(origin!="LGA") %>%
+  mutate(mean_distance_km=mean_distance*1.60934)
+
+#the latest flight by origin
+
+flights %>% group_by(origin) %>%
+  top_n(1,departure_delay)
+```
+
+
+```{r}
+#number of observations
+
+#calculating the number of rows (observations) in each group of the dataset
+
+flights %>% group_by(origin) %>%
+  tally()
+
+#how many flights took off from each origin to each destiation ?
+
+flights %>%
+  group_by(origin,destination) %>%
+  tally()
+
+
+```
+
+
+```{r}
+#mutate by group
+#inserting the mean group as a column
+
+flights %>%
+  group_by(origin) %>%
+  mutate(mean_distance=mean(distance,na.rm=T))
+
+#The difference between summarize and mutate is that summarize always reduces the number of lines in a dataset - it is a total or by group aggregation 
+#whereas mutate never reduces(or increases) the number of lines in the dataset - it just adds a new column
+```
+
+
+```{r}
+#ungrouping
+
+mean_flights <- flights %>% group_by(origin) %>%
+  mutate(mean_distance=mean(distance,na.rm=T))
+
+groups(mean_flights)
+
+#what happens if we want to use the tibble above in a new operation? imagine that we want to calculate the average delay with summarize
+
+mean_flights %>% summarize(mean_delay=mean(departure_delay,na.rm=T))
+
+#ungrouping with ungroup()
+
+mean_flights %>% ungroup() %>%
+  summarize(mean_delay=mean(departure_delay,na.rm=T))
+```
+
+```{r}
+# %
+
+#calculating the percentage of each observation in the dataset using mutate()
+#calculating the percentage of each flight distance per the total distance
+
+flights %>%
+  mutate(Total_distance=sum(distance,na.rm=T)) %>%
+  mutate(Pct_distance=100*(distance/Total_distance))
+
+#or 
+
+flights %>% mutate(Pct_distance=100*(distance/sum(distance,na.rm=T)))
+
+#porcentage of the distance of each flight in the total of each month 
+
+flights %>% group_by(month) %>%
+  mutate(Pct_distance_by_month=100*(distance/sum(distance,na.rm=T)))
+
+#percentage by month day hour origin 
+
+flights %>% group_by(month,day,hour,origin) %>%
+  mutate(Pct_distance=100*(distance/sum(distance,na.rm=T)))
+
+#it is common to calculate the percentage of the number of observations(rows) in a group comparing it with the total amount of observations
+#in this case we calculate the percentage based on the the number of lines
+
+flights %>% group_by(origin) %>%
+  tally() %>%
+  mutate(Pct_by_airport=100*(n/sum(n)))
+
+
+#calculating the percentage of flights by month in each airport 
+#in order to do so we can use two grouping processes 
+#first, we calculate the number of observations by airport-month
+#second, we define the denominator as "airport" in order to calculate the percentage
+
+flights %>% group_by(origin,month) %>%
+  tally() %>%
+  group_by(origin) %>%
+  mutate(Pct_by_month_airport=100*(n/sum(n)))
+
+# if we change the second grouping as month ...
+
+flights %>% group_by(origin,month) %>%
+  tally() %>%
+  group_by(month) %>%
+  mutate(Pct_by_month_airport=100*(n/sum(n)))
+  
+#we get the percentage that represents how much each airport contributed to the number of flights in each month
+```
+
+```{r}
+#Advanced filters %in%
+#calculating the percentage of the distance of each flight by the total distance of all flights with ILM ACK GRR or PSP as destination
+flights %>% filter(destination%in%c("ILM","ACK","GRR","PSP")) %>%
+  mutate(Pct_distance=100*(distance/sum(distance,na.rm=T)))
+
+#what does %in% do ? Well... if you wanted to write the same code without it , it would be something like this :
+
+flights %>% filter(destination=="ILM"|destination=="ACK"|destination=="GRR"|destination=="PSP") %>%
+  mutate(Pct_distance=100*(distance/sum(distance,na.rm=T)))
+#so it basically spares you with the work of writing destination == each time in order to filter the airports
+```
+
+
+```{r}
+#summary of multiple columns
+#summarize only allows you to get the mean of one variable, in order to get the mean of multiple variables we have to insert "across()" inside "summarize()"
+
+flights %>% summarize(across(c(departure_time,departure_delay),
+                             mean,
+                             na.rm=T))
+
+#we can also ask for multiple summaries of the same set of variables inserting "list()"
+
+flights %>% summarize(across(c(departure_time,departure_delay),
+                             list(media=mean,
+                                  mediana=median),
+                             na.rm=T))
+
+#summary of all columns inserting "everything()"
+
+flights %>% summarize(across(everything(),
+                             mean,
+                             na.rm=T))
+```
+
+```{r}
+#transformation of multiple columns
+#using scale in order  to standardize each variable
+
+flights %>% mutate(across(where(is.numeric),scale))
+```
+
+
+
+
+
+
+
+
+
+
+
