@@ -1,0 +1,58 @@
+---
+title: "Exercise_1_5"
+author: "André Viola"
+date: "5/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(nycflights13)
+library(knitr)
+library(tidylog)
+library(tidyverse)
+
+flights <- flights %>% mutate (dep_time = departure_time, dep_delay = departure_delay, origin = toupper(origin))
+#Gere uma tabela estática de duração (air_time) média dos voos de cada aeoporto
+#de origem, ordenado de menor a maior duração. Inclua um título e a formatação 
+#apropriada na sua tabela.
+flights  %>%
+  sample_n(5) %>%
+  select(origin, air_time) %>%
+  arrange(air_time) %>%
+  kable(caption = "Average Air Time by Origin",digits = 1)
+```
+
+```{r}
+#Identifique os voos de origem ‘EWR’ no dia 1 de Abril com decolagem antes de 6h. Prepare uma tabela estática que mostra as variáveis dep_time, dep_delay, carrier, flight, dest, air_time, distance. Inclua um título e a formatação apropriada.
+
+flights %>% 
+      filter(origin == "EWR", day == 1, month == 4, dep_time < 600) %>%
+  select(dep_time, dep_delay, carrier, flight, destination, air_time,distance) %>%
+  kable(caption = "Flights from Newark that departed before 6 a.m. on 01/04/2013",
+        digits = 1)
+```
+
+```{r}
+#Duplique a tabela de questão 2, mas agora mande o resultado para uma tabela interativa de datatable. (Não se preocupe com a formatação).
+
+flights %>%
+    select(dep_time, dep_delay, carrier, flight, destination, air_time,distance) %>%
+    filter(origin == "EWR", day == 1, month == 4, dep_time < 600) %>%
+  datatable(colnames = c("Departure Time","Departure Delay","Carrier","Flight","Destination","Air Time","Distance"),
+            caption = "Flights from Newark that departed before 6 a.m. on 01/04/2013",
+            filter = 'top')
+```
+
+
+
+
+
+
+
+
+
+

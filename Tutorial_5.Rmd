@@ -1,0 +1,174 @@
+---
+title: "Tutorial_5"
+author: "André Viola"
+date: "5/3/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+#kable
+
+library("tidyverse")
+library("tidylog")
+library("nycflights13")
+library("knitr")
+```
+
+```{r}
+flights %>% filter(destination=="ANC") %>%
+  kable()
+
+#sample_n() 
+#we select the desired number of observations and R will randomly select this number of lines on the table (observe that the observations change whenever we run the code)
+
+flights %>% sample_n(4) %>%
+  kable()
+```
+
+
+```{r}
+#replicable randomness
+
+set.seed(05008)
+flights %>%
+  sample_n(4) %>%
+  select(month,day,departure_time,carrier,flight,origin,destination) %>%
+  kable()
+```
+
+```{r}
+#limiting the number of columns, adding a caption , limiting the digits shown in the table, changing the variable names and formating the numbers into the portuguese format
+
+flights %>% 
+  sample_n(8) %>%
+  mutate(speed=distance/air_time) %>%
+  select(month,day,departure_time,carrier,flight,origin,destination, speed) %>%
+  kable(caption="Table with 8 random flights", digits = 1, col.names = c("Month","Day","Departure Time","Carrier","Flight","Origin","Destination","Speed"), format.args = list(big.mark=".", decimal.mark=","))
+
+```
+
+
+```{r}
+#whenever you need a quick table you can generate a small table using tibble() and send it to kable() just like this:
+
+tibble(Functionn = c("kable","option df_print: paged","datatable"), Utility = c("Word/PDF, statistical report", "HTML, simple interactive reports","HTML, complex interative reports")) %>%
+  kable()
+
+
+```
+
+```{r}
+#interactive tables
+library(DT)
+#setting 
+flights %>%
+  sample_n(100) %>%
+  mutate(speed=distance/air_time) %>%
+  select(month, day, departure_time, carrier,flight,origin,destination,speed) %>%
+  datatable()
+
+
+flights %>% 
+  sample_n(100) %>%
+  mutate(speed=distance/air_time) %>%
+  select(month, day, departure_time, carrier, flight, origin, destination, speed) %>%
+  datatable(colnames=c("Mês","Dia","Hora de Partida","Companhia Aérea","Voo","Origem","Destino","Speed"), 
+            caption="Tabela de 100 voos aleatórios",
+            filter='top') %>%
+  formatRound("speed",1) %>%
+  formatStyle('speed',
+    backgroundColor = styleInterval(7, c('white', 'orange'))
+  )
+```
+
+```{r}
+#Changing the observational unit
+
+flights %>% filter(destination=="SNA") %>%
+  select(month,day,origin,destination)
+
+#the observation is each flight and each variable is the attribute of each flight(data about it)
+#origin and destination are both airports
+#we can imagine a dataset where we separate the flights in 2 events - departures and arrivals, in this alternative dataset each observation is an event and each flight has two enters(departures and arrivals)
+
+#using pivot_longer to convert columns into observations
+
+flights %>%
+  filter(destination=="SNA") %>%
+  select(month,day,origin,destination) %>%
+  pivot_longer(cols=c(origin,destination))
+
+#renaming the columns name and value
+
+flights %>%
+  filter(destination=="SNA") %>%
+  select(month,day, origin, destination) %>%
+  pivot_longer(cols=c(origin,destination), names_to="Direction", values_to="Airport")
+
+
+#avoiding repeated variables with distinct
+
+flights %>% 
+  distinct(month,day,dep_time,carrier,flight,origin,destination)
+
+#now we can re-do pivot_longer using these identifiers
+
+long_flights <- flights %>%
+  filter(destination=="SNA") %>%
+  select(month,day,dep_time,carrier,flight,origin,destination) %>%
+  pivot_longer(cols=c(origin,destination), names_to="Direction", values_to="Airport")
+
+long_flights
+```
+
+```{r}
+#pivot_wider
+#turning observations into variables
+#we specify the identification columns that we do not want to pivot on id_cols
+#instead of the new columns we specify the name of the original column that contain the names of the new columns on frames_from
+#we specify the columns from where we'll get the values that will form the new columns
+
+long_flights %>%
+  pivot_wider(id_cols=c(month,day,dep_time,carrier,flight), names_from = Direction, values_from = Airport)
+
+
+```
+
+```{r}
+#R BASE
+#using [] after a dataframe meaning that we want to adjust the columns and/or rows 
+#selecting the rows to keep (slice)
+flights[1:5, ]
+#selecting the rows by condition 
+flights[flights$distance==200, ]
+#how do we choose columns on R BASE ? we use the second space
+flights[flights$distance==200, c("month","day","dep_time","origin","destination")]
+
+#the equivalent on tidyverse ... 
+
+flights %>%
+  filter(distance==200) %>%
+  select(month,day,dep_time,origin,destination)
+```
+
+
+```{r}
+#totals for tables
+
+#adding a row at the end of the table with the total with add_row
+#sum(n) does not know how to look for the n column in the current table, it needs a hint for where to look for it , so '.' meand the current tibble and we use $ just like on R BASE
+
+flights %>% 
+  group_by(origin) %>%
+  tally() %>%
+  add_row(origin = "TOTAL", n=sum(.$n))
+
+```
+
+

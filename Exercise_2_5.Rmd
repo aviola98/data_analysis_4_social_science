@@ -1,0 +1,31 @@
+---
+title: "Exercise_2_5"
+author: "André Viola"
+date: "5/7/2021"
+output: html_document
+---
+
+```{r}
+#Use pivot_longer para virar a tabela flights mais longa, para que cada voo tem duas observações - uma para a hora de partida (dep_time) e uma outra para a hora de chegada (arr_time).
+
+flights_longo <- flights %>% 
+  select(month,day,origin,carrier, destination,flight,departure_time,arrival_time)%>%
+  pivot_longer(cols=c(departure_time,arrival_time), names_to="Situation",values_to="Time")
+```
+
+```{r}
+#Usando o seu resultado de questão 1, gere uma tabela estática de 10 linhas selecionadas aleatoriamente por R, mostrando as variáveis carrier, flight, origin, dest e as colunas novas que você gerou na questão 1.
+
+flights_longo %>% 
+  sample_n(10) %>%
+  select(carrier,flight,origin,destination, Situation,Time) %>%
+  kable(caption = "Departure and Arrival Time NY", digits = 1)
+```
+
+```{r}
+#Usando o seu resultado de questão 1, use pivot_wider para recuperar o banco de dados original de flights. Verifique que os números de colunas e linhas são íguais.
+
+flights_longo %>%
+  pivot_wider(id_cols=c(month, day, origin,carrier,destination,flight), names_from=Situation, values_from=Time)
+```
+
