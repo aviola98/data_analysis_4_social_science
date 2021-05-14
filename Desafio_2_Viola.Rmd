@@ -1,0 +1,391 @@
+---
+title: "Relatório desafio 2"
+author: "Aluno: André Viola"
+date: "14/05/2021"
+output:  
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+#abrindo as libraries necessárias
+#nota: por vezes usei "dplyr::" na frente de uma função pois estava com problemas na hora de rodar algumas funções e esta foi a solução encontrada para o código funcionar
+library(tidyverse)
+library(readr)
+library(knitr)
+library(dplyr)
+library(DT)
+```
+
+#### Número USP: 10325940
+#### Disciplina: FLS6397
+#### Professor: Jonathan Peter Phillips
+
+```{r}
+#1
+#abrindo o banco de dados
+
+CENSOESC_2004_RO <- read_delim("CENSOESC_2004_RR.csv",
+                              delim = "|")
+
+```
+
+```{r}
+#2
+#removendo CODFUNC (escolas não ativas) do banco de dados
+
+CENSOESC_2004_RO <- CENSOESC_2004_RO %>% 
+  dplyr::select(-CODFUNC)
+
+#OBS: no relatório optei por colocar apenas as tabelas geradas nos exercícios (requisitadas) e as tabelas que mostrassem o top_n requerido em algumas questões
+```
+
+
+#### Após remover as escolas não-ativas cada observação no banco de dados representa um conjunto de informações acerca de escolas ativas no Estado de Roraima.
+
+
+## Tabela com escolas por município com o total de escolas no Estado na linha final
+```{r}
+#3
+#A
+#contando o numero de escolas no Estado (deixei o código como comentário para não aparece no relatório final)
+
+#CENSOESC_2004_RO %>% 
+#  distinct(CODIGO_ESCOLA)
+
+#criando uma tabela de escolas por municipio com o total de escolas no final
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC, CODIGO_ESCOLA) %>%
+  tally() %>%
+  mutate(escola_por_municipio=sum(n)) %>%
+  dplyr::distinct(MUNIC, escola_por_municipio) %>%
+  ungroup() %>%
+  add_row(MUNIC="TOTAL", escola_por_municipio=sum(.$escola_por_municipio)) %>%
+  kable(caption="Número de Escolas por Município com o Total na última linha",
+      col.names=c("Município","Número de Escolas"))
+```
+
+#### No Estado de Roraima se tem 880 escolas. O número de Escolas por Município está especificado na tabela acima.
+
+
+## Indicando qual o município com o maior número de escolas
+```{r}
+#indicando qual o município com o maior número de escolas
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC, CODIGO_ESCOLA) %>%
+  tally() %>%
+  mutate(escola_por_municipio=sum(n)) %>%
+  ungroup() %>%
+  dplyr::distinct(MUNIC, escola_por_municipio) %>%
+  dplyr::top_n(1, escola_por_municipio) %>%
+  kable(col.names = c("Município","Número de Escolas"))
+```
+#### O município com o maior número de escolas é Boa Vista com 153 escolas.
+
+## Tabela com o número de professores por município em Roraima
+```{r}
+#4
+#A
+#encontrando o número de professores em Roraima
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(total_professores=sum(PROFESS,na.rm=T))  %>%
+  dplyr::distinct(MUNIC, total_professores) %>%
+  ungroup() %>%
+  add_row(MUNIC="TOTAL", total_professores=sum(.$total_professores)) %>%
+  kable(caption="Número de Professores por Município com o Total do Estado na última linha",
+        col.names=c("Município","Total Professores"))
+```
+#### O total de professores no Estado de Roraima é de 7669, o número de professores por município está na tabela acima.
+
+
+## Tabela com a porcentagem de professores entre todos os empregados em cada município
+```{r}
+#B
+#calculando a porcentagem de professores entre todos os empregados (PROFESS e FUNCION) em cada município
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(tot_professores=sum(PROFESS, na.rm=T), 
+            tot_empregados=sum(FUNCION+PROFESS, na.rm=T)) %>%
+  mutate(Pct_profess_empregados=100*(tot_professores/tot_empregados)) %>% kable(caption="Porcentagem de professores entre todos os empregados por Município",
+        col.names=c("Município","Total Professores","Total Empregados","Porcentagem Professores"),
+        digits = 1)
+```
+
+## Tabela com a média e o desvio padrão do número de professores por escola 
+```{r}
+#5
+#criando uma tabela com o calculo da média e do Desvio Padrão do numero de professores por Escola em cada município 
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(professores_media=mean(PROFESS,na.rm=T),
+          professores_sd=sd(PROFESS, na.rm=T)) %>%
+  kable(caption="Média e Desvio Padrão do Número de Professores por Escola em Cada Município", col.names=c("Município","Média","Desvio Padrão"),
+        digits = 1)
+```
+
+## Município que apresenta a maior variabilidade no número de professores por escola
+```{r}
+#Encontrando o município que apresenta o maior variabilidade no número de professores por escola 
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(professores_media=mean(PROFESS,na.rm=T),
+          professores_sd=sd(PROFESS, na.rm=T)) %>%
+  top_n(1) %>%
+  kable(digits = 1, col.names=c("Município","Média","Desvio Padrão"))
+```
+
+#### O município que apresenta maior variabilidade(desvio padrão) no número de professores por escola é Boa Vista, com um desvio padrão de 25.1 .
+
+## Tabela com a porcentagem de pofessores em cada rede
+```{r}
+#6
+#calculando o total de professores que trabalham no Estadual
+professores_estadual <- CENSOESC_2004_RO %>%
+  filter(DEP=="Estadual") %>%
+  summarize(Total_professores_Estadual=sum(PROFESS,na.rm=T)) %>%
+  pull(Total_professores_Estadual)
+
+#calculando o total de professores que trabalham no Federal
+
+professores_federal <- CENSOESC_2004_RO %>%
+  filter(DEP=="Federal") %>%
+  summarize(Total_professores_Federal=sum(PROFESS,na.rm=T)) %>%
+  pull(Total_professores_Federal)
+
+#professores municipal
+
+professores_municipal <- CENSOESC_2004_RO %>%
+  filter(DEP=="Municipal") %>%
+  summarize(Total_professores_Municipal=sum(PROFESS,na.rm=T)) %>%
+  pull(Total_professores_Municipal)
+
+#professores particular
+
+professores_particular <- CENSOESC_2004_RO %>%
+  filter(DEP=="Particular") %>%
+  summarize(Total_professores_Particular=sum(PROFESS,na.rm=T)) %>%
+  pull(Total_professores_Particular)
+
+#fazendo uma tabela incluindo a porcentagem de professores em cada rede (nela também estão contidos o número total por tipo de rede)
+
+CENSOESC_2004_RO %>%
+  group_by(DEP) %>%
+  summarize(total_professores=sum(PROFESS,na.rm=T)) %>% 
+  mutate(Pct_professores_rede=100*(total_professores/sum(total_professores, na.rm=T))) %>% 
+  kable(caption="Porcentagem de professores por Rede",
+        col.names=c("Rede","Total de Professores","Porcentagem de Professores"),
+        digits = 1)
+```
+
+#### Na rede Estadual trabalham `r professores_estadual` professores, na rede Federal trabalham `r professores_federal` professores, na rede Municipal trabalham `r professores_municipal` e na rede Particular trabalham `r professores_particular` professores. 
+#### A porcentagem de professores em cada rede está disponível na tabela acima. 
+
+
+## Tabela com a porcentagem de escolas com laboratório informático
+```{r}
+#7
+#fazendo tabela com porcentagem de escolas com laboratório informático por município
+#para a realização desse código, me beneficiei do forum reservado às dúvidas, em especial ao Vinicius Dalbelo
+#no entanto,fiz umas edições próprias, uma vez que adicionei "na.rm=T" com a finalidade de excluir os NA da observação no momento de calcular a porcentagem e  adicionei também "caption" e o nome das colunas.
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(Pct_escola_lab_info=sum(LAB_INFO, na.rm=T)/n()*100) %>%
+  kable(caption="Porcentagem de Escolas com laboratórios de informática por município",
+        col.names = c("Município","Porcentagem de Laboratórios de Informática"),
+        digits = 1)
+```
+
+## Município com a maior porcentagem de escolas com laboratório de informática
+```{r}
+#encontrando o nome do município com a maior porcentagem de escolas com laboratório informática
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC) %>%
+  summarize(Pct_escola_lab_info=sum(LAB_INFO, na.rm=T)/n()*100) %>%
+  top_n(1) %>%
+  kable(col.names = c("Município","Porcentagem de Laboratórios de Informática"),
+        digits = 1)
+```
+
+#### O município com a maior porcentagem de escolas com laboratório informático é Boa Vista, com 21.6%
+
+```{r}
+#8
+#A
+#virando o banco de dados do formato largo para o formato longo (usando pivot_longer) para que VDG1CA, VDG1C1,VDG1C3 e VDG1C4 se tornem uma variável que descreve o nível de ensino do professor e outra variável que descreve o número de professores 
+CENSOESC_LONGO <- CENSOESC_2004_RO %>%
+  pivot_longer(cols=c(VDG1CA,VDG1C1,VDG1C3,VDG1C4),
+               names_to="NIVEL_PROFESSOR",
+               values_to="NUMERO_PROFESSORES")
+```
+
+```{r}
+#8
+#B
+#recodificando os valores de VDG1CA, VDG1C1,VDG1C3 e VDG1C4 para Creche,Pré-Escola,Fundamental e Médio respectivamente (no banco longo)
+CENSOESC_LONGO <- CENSOESC_LONGO %>%
+  mutate(NIVEL_PROFESSOR = case_when(NIVEL_PROFESSOR == "VDG1CA" ~ "Creche",
+                                     NIVEL_PROFESSOR=="VDG1C1"~"Pre-Escola",
+                                     NIVEL_PROFESSOR=="VDG1C3"~"Fundamental",
+                                     NIVEL_PROFESSOR=="VDG1C4"~"Medio"))
+```
+
+## Número de professores resumido por nível de ensino em Roraima
+```{r}
+#8
+#C
+#resumindo o número de professores por nível de ensino no estado 
+
+CENSOESC_LONGO %>%
+  group_by(NIVEL_PROFESSOR) %>%
+  summarize(professores_nivel=sum(NUMERO_PROFESSORES,na.rm=T)) %>%
+  kable(col.names=c("Nível","Número de Professores"))
+```
+
+## Tabela com a média de professores por escola em cada nível de ensino por município
+```{r}
+#9
+#A
+#calculando o total do numero de professores e a media por escola em cada nivel de ensino em cada municipio
+#foi usado o datatable pelo excessivo número de observações 
+CENSOESC_LONGO %>%
+  group_by(CODIGO_ESCOLA, NIVEL_PROFESSOR, MUNIC,NUMERO_PROFESSORES) %>%
+  tally() %>%
+  distinct(NIVEL_PROFESSOR,MUNIC, NUMERO_PROFESSORES) %>%
+  summarize(total_prof=sum(NUMERO_PROFESSORES,na.rm=T)) %>%
+  group_by(CODIGO_ESCOLA) %>%
+  mutate(mean_prof=mean(total_prof)) %>%
+  datatable(caption = "Média de professores por escola em cada nível de ensino por município",
+        colnames = c("Código Escola","Nível","Município","Total Professores",
+                      "Média de Professores"))%>%
+  formatRound("mean_prof",1)
+```
+
+## Tabela com a orcentagem dos professores em cada nível de ensino por município
+```{r}
+#9
+#B
+#calculando a procentagem de professores em cada nivel de ensino por municipio em uma tabela
+#neste código reconheço mais uma vez a ajuda do forum, neste caso do Henrique Kozlowski 
+
+CENSOESC_LONGO %>%
+  group_by(MUNIC, NIVEL_PROFESSOR) %>%
+  tally(NUMERO_PROFESSORES) %>%
+  mutate(pct_professores=100*(n/sum(n))) %>%
+  datatable(caption="Tabela com Porcentagem dos Professores em cada Nível de Ensino por Município",
+        colnames=c("Município","Nível","Numero de Professores","Porcentagem de Professores")) %>%
+  formatRound("pct_professores",1)
+```
+
+## Município com o maior porcentagem de professores alocado no nível Fundamental
+```{r}
+#encontrando o município com a maior porcentagem dos seus professores no Ensino Fundamental
+CENSOESC_LONGO %>%
+  group_by(MUNIC, NIVEL_PROFESSOR) %>%
+  tally(NUMERO_PROFESSORES) %>%
+  mutate(pct_professores=100*(n/sum(n))) %>%
+  ungroup() %>%
+  filter(NIVEL_PROFESSOR=="Fundamental") %>%
+  top_n(1) %>%
+  kable(digits = 1,
+        col.names = c("Município","Nível","Número de Professores",
+                      "Porcentagem de Professores"))
+```
+
+#### O município com a maior porcentagem de professores alocados no nível Fundamental é Amajari com 76.7% 
+
+## Tabela com a porcentagem dos professores em cada município por nível de ensino
+```{r}
+#9
+#C
+#calculando a porcentagem dos professores em cada município, por nível de ensino, em uma tabela 
+#o raciocínio é parecido com a letra B, embora eu tenha agrupado pelo Nível de Ensino primeiro uma vez que o exercício pede por Nível de Ensino 
+
+CENSOESC_LONGO %>%
+  group_by(NIVEL_PROFESSOR,MUNIC) %>%
+  tally(NUMERO_PROFESSORES) %>%
+  mutate(pct_professores=100*(n/sum(n)))%>%
+   datatable(caption="Tabela com Porcentagem dos Professores em cada Município por Nível de Ensino",
+        colnames=c("Nível","Município","Numero de Professores","Porcentagem de Professores")) %>%
+  formatRound("pct_professores",1)
+```
+
+## Município com a maior porcentagem de todos os professores do Ensino Fundamental de Roraima
+```{r}
+#encontrando o município com maior porcentagem de todos os professores de Ensino Fundamental 
+
+CENSOESC_LONGO %>%
+  group_by(NIVEL_PROFESSOR, MUNIC) %>%
+  tally(NUMERO_PROFESSORES) %>%
+  mutate(pct_professores=100*(n/sum(n))) %>%
+  filter(NIVEL_PROFESSOR == "Fundamental") %>%
+  top_n(1) %>%
+  kable(digits=1 , col.names = c("Nível","Município","Número de Professores","Porcentagem de Professores"))
+```
+
+#### O município com a maior porcentagem de todos os Professores de Ensino Fundamental no Estado de Roraima é Boa Vista, com 50.5% 
+
+## Amostra aleatória de duas Escolas Estaduais em cada município
+```{r}
+#10
+#gerando uma amostra aleatoria no banco largo de duas escolas estaduais em cada município
+#foi adicionado o set.seed para fins de reprodutibilidade
+
+set.seed(05508)
+CENSOESC_2004_RO %>%
+  filter(DEP=="Estadual") %>%
+  dplyr::select(CODIGO_ESCOLA, MUNIC,DEP, PROFESS) %>%
+  sample_n(2) %>%
+  kable(caption = "Tabela aleatória",
+        col.names = c("Codigo Escola","Municipio","Rede","Professores"))
+```
+
+## Tabela com o nome dos municípios nas linhas e a rede nas colunas, nas celulas estão os números das escolas de cada rede em cada município
+```{r}
+#11
+#CRIANDO TABELA COM NOME DOS MUNICIPIOS NAS LINHAS E A REDE NAS COLUNAS , NAS CELULAS COLOCA-SE O NUMERO DE ESCOLAS DE CADA REDE EM CADA MUNICIPIO
+
+#Passo 1
+#calcular o numero de escolas por municipio e rede
+
+#Passo 2
+#Transformar as variaveis do municipio e rede em fatores
+
+
+#Passo 3
+#usar complete() para criar uma tabela completa com todas as combinações de municipio e rede possiveis mesmo que nao se tenha uma rede especifica em um municipio especifico. Preenche-se os valores de NA com 0 
+
+#Passo 4
+#usar uma função pivot para virar o tibble e geraro o tamanho da tabela desejada (municipio nas linhas e redes nas colunas).No caso pivot_wider, para colocar as Redes nas colunas.
+
+CENSOESC_2004_RO %>%
+  group_by(MUNIC, DEP, CODIGO_ESCOLA) %>%
+  tally() %>%
+  summarize(total_escola=sum(n, na.rm=T)) %>%
+  mutate(MUNIC=factor(MUNIC, levels = c("ALTO ALEGRE","MUCAJAI","BOA VISTA",
+                                        "AMAJARI","UIRAMUTA","PACARAIMA",
+                                        "BONFIM","CANTA","NORMANDIA","CARACARAI",
+                                        "IRACEMA","SAO JOAO DA BALIZA",
+                                        "CAROEBE","SAO LUIZ","RORAINOPOLIS")),
+          DEP=factor(DEP, levels = c("Estadual","Municipal","Federal",
+                                     "Particular"))) %>% 
+  complete(DEP, fill=list(total_escola=0)) %>%
+  pivot_wider(id_cols = c(MUNIC),
+              names_from = DEP,
+              values_from = total_escola) %>%
+  kable(caption = "Tabela com nome dos Municípios nas Linhas e a Rede nas Colunas",
+        col.names = c("Município","Estadual","Municipal","Federal","Particular"))
+```
