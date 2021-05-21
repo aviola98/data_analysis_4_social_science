@@ -109,3 +109,17 @@ planes %>%
   anti_join(flights, by="tailnum")
 #all the planes present in planes are available in flights
 
+#Joining the dataset by multiple variables
+
+flights_weather <- flights%>%
+  left_join(weather,
+            c("origin","year","month","day","hour"))
+
+View(flights_weather)
+
+#identifying the flights subject to a bigger wind speed
+
+flights_weather %>%
+  ungroup() %>%
+  top_n(1,wind_speed)
+#always include all the variables that are common identifiers in both databases
