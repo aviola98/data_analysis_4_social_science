@@ -13,6 +13,7 @@ flights %>%
                    fill = carrier,
                    alpha=0.2))
 
+
 #prepare a barr graph showing the average air time of each carrier
 
 flights %>%

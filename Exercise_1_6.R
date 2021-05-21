@@ -10,6 +10,7 @@ flights %>%
            fill="orange")
 
 
+
 #prepare a bar graph showing the number of flights by carrier to the JFK airport
 
 flights %>%
