@@ -116,10 +116,18 @@ flights_weather <- flights%>%
             c("origin","year","month","day","hour"))
 
 View(flights_weather)
-
+View(weather)
 #identifying the flights subject to a bigger wind speed
 
 flights_weather %>%
   ungroup() %>%
   top_n(1,wind_speed)
 #always include all the variables that are common identifiers in both databases
+
+#Data set with missing data
+#cleaner database without NAs 
+
+#inner_join
+
+
+
