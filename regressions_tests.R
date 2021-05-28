@@ -65,7 +65,12 @@ flights %>%
   lm(arrival_delay~origin + month + carrier,
      data=.) %>%
   stargazer(type = "html")
-
 #{r, results='asis'}
 
+#zeling
 
+library("Zeling")
+
+flights %>% zeling(arrival_delay~origin + month,
+                   data=.,
+                   model="ls")
