@@ -37,13 +37,10 @@ library("tidyverse")
 library("tidylog")
 library("nycflights13")
 
-flights_JFK_ATL <- flights %>%
-  filter(month == 4 &
-           day == 22 &
-           origin == "JFK" &
-           destination == "ATL") 
-
-View(flights_JFK_ATL)
+flights_JFK_ATL <- flights %>% filter(month==4 & 
+                                        day==22 & 
+                                        origin=="jfk" & 
+                                        destination=="ATL")
 
 #notice that tailnum only appear 5 times on the table above.
 #Now it is easy to cross the tables with a common identifier
@@ -110,18 +107,15 @@ planes %>%
 #all the planes present in planes are available in flights
 
 #Joining the dataset by multiple variables
+flights_weather <- flights %>% left_join(weather, 
+                                         c("origin", "year", "month", "day", "hour"))
 
-flights_weather <- flights%>%
-  left_join(weather,
-            c("origin","year","month","day","hour"))
 
-View(flights_weather)
-View(weather)
 #identifying the flights subject to a bigger wind speed
 
 flights_weather %>%
   ungroup() %>%
-  top_n(1,wind_speed)
+  top_n(1, wind_speed)
 #always include all the variables that are common identifiers in both databases
 
 #Data set with missing data
@@ -129,5 +123,54 @@ flights_weather %>%
 
 #inner_join
 
+flights %>% 
+  inner_join(planes, by=c("tailnum"))
 
+#often  inner_join has a selection bias since we don't know a lot about the missing planes but we can't ignore them for a quantitative analysis
+#let's join the aiports and flights databases
+
+#joining by destination since there are more aiports (by doing so we avoid repetition) 
+#the destination identifier in airports is faa so we gotta change the name 
+
+airports <- airports %>%
+  #rename(dest=faa) this was the line I had put before but I corrected myself
+  rename(destination=dest)
+
+flights %>% left_join(airports, by=c("destination"))
+
+#if we only want the complete name of the airport
+
+flights %>%
+  left_join(airports %>%
+              select(destination,name),
+            by=c("destination"))
+
+flights %>% anti_join(airports, by=c("destination"))
+airports %>% anti_join(flights, by=c("destination"))
+
+#left join only conserves the data reffering to the left tibble
+#but we can use the right join as well
+
+flights %>%
+  right_join(airports, by=c("destination"))
+
+flights %>% right_join(airports, by=c("destination")) %>%
+  filter(is.na(year)) %>%
+  select(year, month, day, flight, destination, name)
+
+#full_join preserves information form both databases
+
+flights %>%
+  full_join(airports, 
+            by=c("destination"))
+
+
+
+#five kinds of joins
+
+#left_join (preserves all the observations from Database 1 with the additional columns from Database 2)
+#right_join (preserves all the observations from Databse 2 with the additional columns from Database 1)
+#inner_join (preserves only the observations that exists in both data)
+#full_join (preservs all the observations from both data)
+#anti_join (identifies the observations in Database 1 that do not exist in Database 2)
 
