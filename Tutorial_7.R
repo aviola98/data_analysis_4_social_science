@@ -174,3 +174,38 @@ flights %>%
 #full_join (preservs all the observations from both data)
 #anti_join (identifies the observations in Database 1 that do not exist in Database 2)
 
+#Nesting Data
+
+
+flights_nested <- flights %>%
+  group_by(origin) %>%
+  nest()
+
+flights_nested %>%
+  filter(origin == "ewr") %>%
+  pull(data)
+
+
+flights_nested <- flights %>% 
+  group_by(origin, carrier) %>%
+  nest() %>%
+  arrange(carrier, origin)
+
+flights_nested
+
+flights_nested %>% unnest()
+
+#the value of nesting is letting even clearer the structure and the content of our data
+#we can explicitily work with the relevant data unity and hide the mountain of internal data
+
+
+#combining nest with left_join
+#letting clear that the unity of analysis is each plane
+#avoiding the duplication of the planes data for each line
+flights %>%
+  group_by(tailnum) %>%
+  nest() %>%
+  left_join(planes, by=c("tailnum")) %>%
+  rename("travels"="data")
+
+
