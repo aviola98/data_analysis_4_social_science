@@ -64,4 +64,8 @@ flights %>%
 flights %>%
   lm(arrival_delay~origin + month + carrier,
      data=.) %>%
-  stargazer()
+  stargazer(type = "html")
+
+#{r, results='asis'}
+
+
