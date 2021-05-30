@@ -91,3 +91,61 @@ airports %>%
   st_distance() %>%
   as_tibble()
   
+
+#Working with Poligons
+
+#opening a US shapefile
+
+states <- st_read("states.shp")
+
+states %>% ggplot() +
+  geom_sf()
+
+#visualizing both the map and the points of the airports
+#we must standardize the projection in both data
+#let's standardize the projection of states to the CRS 4326 (the same as airports)
+
+states %>%
+  st_transform(4326) %>%
+  ggplot() +
+  geom_sf() +
+  #adding airports to the map
+  geom_sf(data=airports)
+
+#refrining the map visualization
+
+states %>%
+  st_transform(4326) %>%
+  ggplot() +
+  #adding color
+  #changing the color of the states according to their sub-region
+  geom_sf(aes(fill=SUB_REGION),color= "#756bb1", alpha=0.2) +
+  #changing the size of the points when adding the airports dataset
+  #changing the color of the airports according to their altitude
+  geom_sf(data=airports, aes(color=alt), size = 0.5) +
+  #adding an appropriate scale
+  scale_color_gradient(low="#00441b", high="#ef3b2c") +
+  #adding a title
+  ggtitle("Map of airports in the US") +
+  #adding theme_minimal in order to remove the background, the axes and the rotules 
+  theme_minimal()
+
+#GPS 
+#creating spacial data
+#creating a simple tibble with some addresses and use the function geocode_OSM from tmaptools in order to convert each adress into the latitude and longitude coordiantes
+
+library(tmaptools)
+
+Places <- tibble(ID=c(1,2),
+                  Address=c("Av. Prof. Luciano Gualberto, 298-460 - Butantã, São Paulo, Brazil",
+                             "Av. Paulista, 1578 - Bela Vista, São Paulo, Brazil"))
+
+Places <- geocode_OSM(Places$Address, projection=4326, as.sf=T)
+#notice that we use the CRS(projection) into which we want to receive our data so that it can be standardized with our other layers 
+#and we use as.sf=T so that the result is already a simple features tibble ready to be used
+
+#exploring our data using html
+library(mapview)
+
+Places %>%
+  mapview()
