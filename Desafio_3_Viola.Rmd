@@ -1,0 +1,491 @@
+---
+title: "Desafio_3_Viola"
+author: "André Viola"
+date: "5/21/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+```
+
+```{r}
+#2
+#abrindo os dados
+banco_resultados_RR <- read_delim("resultados_2016_RR.csv",
+                             delim=";",
+                             col_types="cccdcccd")
+
+banco_candidatos_RR <- read_delim("candidatos_2016_RR.csv",
+                                  delim=";")
+#transformando SQ_CANDIDATO e SQ_COLIGACAO em character com a finalidade de aparecer o seu valor
+banco_candidatos_RR <-banco_candidatos_RR %>%
+  mutate(SQ_CANDIDATO = as.character(SQ_CANDIDATO))
+banco_candidatos_RR <-banco_candidatos_RR %>%
+  mutate(SQ_COLIGACAO = as.character(SQ_COLIGACAO))
+
+```
+
+#3a
+### A unidade de análise do banco de candidatos são, como enunciado pelo titulo, os candidatos da eleição para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os mesmos. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO, NR_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO,NM_SOCIAL_CANDIDATO, NR_CPF_CANDIDATO,NM_EMAIL e NR_TITULO_ELEITORAL_CANDIDATO.
+#3b
+### A unidade de análise do banco de resultados são, como enunciado pelo título, os resultados das eleições para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os resultados eleitorais por candidato. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO e NM_CANDIDATO.
+#3c
+#SQ_CANDIDATO uma vez que se dá preferência por indicadores com sequências numéricas ao invés de caractéres (como no caso de NM_CANDIDATO)
+
+```{r}
+#3d
+#usado anti_join para identificar se ha resultados faltando no banco de dados de resultados que nao aparecem no banco de candidatos
+banco_resultados_RR %>% anti_join(banco_candidatos_RR, c("SQ_CANDIDATO"))
+#há 0 resultados que nao aparecem no banco de dados de candidatos
+
+#usando anti_join para identificar se há candidatos que faltam detalhes do candidato no banco de dados de candidatos que nao aparecem no banco de candidatos 
+banco_candidatos_RR %>% anti_join(banco_resultados_RR, c("SQ_CANDIDATO"))
+
+#ha 114 candidatos que não aparecem no banco de resultados 
+```
+
+#Os candidatos não aparecem no banco de dados dos resultados porque eles estavam inaptos para a candidatura.
+
+```{r}
+#3f
+#selecionando apenas SQ_CANDIDATO, NM_CANDIDATO, NM_UE, SG_PARTIDO, NR_IDADE_DATA_POSSE, DS_GENERO, DS_GRAU_INSTRUCAO, DS_COR_RACA do banco de dados de candidatos
+ 
+banco_candidatos_RR <- banco_candidatos_RR %>% select(SQ_CANDIDATO, NM_CANDIDATO, NM_UE, SG_PARTIDO, NR_IDADE_DATA_POSSE, DS_GENERO, DS_GRAU_INSTRUCAO, DS_COR_RACA)
+
+banco_candidatos_RR
+```
+
+```{r}
+#4
+#juntando os bancos sem se importar com a duplicação de dados
+
+banco_candidatos_resultados_RR_duplo <- banco_candidatos_RR %>%
+  left_join(banco_resultados_RR, by=c("SQ_CANDIDATO","NM_CANDIDATO", "SG_PARTIDO"))
+
+banco_candidatos_resultados_RR_duplo
+```
+
+```{r}
+#5
+#evitando a duplicação dos dados dos candidatos
+#A
+#somando o voto dos candidatos em diversas zonas para gerar um banco de dados resumido do nível do candidato 
+#incluindo a variável DS_SIT_TOT_TURNO 
+
+banco_resultados_resumido <-banco_resultados_RR %>%
+  group_by(SQ_CANDIDATO, DS_SIT_TOT_TURNO, NM_CANDIDATO) %>%
+  summarise(QT_VOTOS_NOMINAIS=sum(QT_VOTOS_NOMINAIS, na.rm=T))
+
+banco_resultados_resumido
+
+```
+
+```{r}
+#5B
+#left_join com o banco da questão anterior
+
+banco_candidatos_resultados_RR <- banco_resultados_resumido %>%
+  left_join(banco_candidatos_RR, by=c("SQ_CANDIDATO", "NM_CANDIDATO"))
+
+banco_candidatos_resultados_RR
+```
+
+```{r}
+#6A
+#no banco anterior se tem apenas candidatos para os quais temos resultados
+#join com tabela com todos os candidatos
+#no caso, usarei o full_join para abrigar todos os candidatos , mesmo sem resultado
+
+banco_candidatos_resultados_RR_todos <-
+  banco_candidatos_RR %>%
+  full_join(banco_resultados_resumido, by=c("SQ_CANDIDATO", "NM_CANDIDATO"))
+
+banco_candidatos_resultados_RR_todos
+```
+
+```{r}
+#6B
+#para os candidatos que não receberam votos no banco resultados a coluna foi preenchida com NA
+#recodificando os NA em QT_VOTOS_NOMINAIS como 0
+banco_candidatos_resultados_RR_todos <- banco_candidatos_resultados_RR_todos %>%
+  mutate(QT_VOTOS_NOMINAIS=case_when(is.na(QT_VOTOS_NOMINAIS) ~ 0,
+                                    TRUE~QT_VOTOS_NOMINAIS))
+
+```
+
+```{r}
+#corrigindo os NA em DS_GENERO  e NM_UE
+banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
+  mutate(DS_GENERO=case_when(is.na(DS_GENERO)~ "FEMININO",
+                             TRUE ~ DS_GENERO))
+  
+banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
+  mutate(NM_UE=case_when(is.na(NM_UE)~"RORAINÓPOLIS",
+                         TRUE~NM_UE))
+#7A
+#graficos da 5B
+#numero de candidatos para vereador por municipio (NM_UE)
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE,NM_CANDIDATO) %>%
+  ggplot() +
+  geom_bar(aes(x=NM_UE)) +
+  #adicionando um título e nomeando os eixos
+  ggtitle("Número de candidatos a vereador por município") +
+  xlab("Municípios") +
+  ylab("Número de candidatos")+ 
+  #usnado esse código de camada para virar o nome dos municípios na vertical
+  theme(axis.text.x = element_text(angle = 90))
+
+#ou, alternativamente...
+
+#banco_candidatos_resultados_RR %>%
+#  group_by(NM_UE, NM_CANDIDATO) %>%
+#  tally() %>%
+#  ggplot() +
+#  geom_col(aes(x=NM_UE,
+#             y=n)) +
+#ggtitle("Número de candidatos a vereador por município") +
+ # xlab("Municípios") +
+ # ylab("Número de candidatos")+ 
+ # theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r}
+#8
+#numero de candidatos por gênero(DS_GENERO)
+
+banco_candidatos_resultados_RR %>%
+  ggplot() +
+  geom_bar(aes(x=DS_GENERO)) +
+  ggtitle("Número de candidatos por gênero") +
+  xlab("Gênero") +
+  ylab("Número de candidatos") +
+  #aplicando um tema simples
+  theme_economist()
+
+#ou, alternativamente ...
+#banco_candidatos_resultados_RR %>%
+#  group_by(NM_CANDIDATO,DS_GENERO) %>%
+#  tally() %>%
+#  ggplot() +
+#  geom_col(aes(x=DS_GENERO,
+#               y=n))
+```
+
+
+```{r}
+#9
+#grafico mostrando a porcentagem de candidatos por gênero em cada municipio
+
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE,DS_GENERO) %>%
+  tally() %>%
+  group_by(NM_UE) %>%
+  mutate(NUMERO_CANDIDATO_MUNICIPIO=sum(n,na.rm=T)) %>%
+  ggplot() +
+  geom_col(aes(x=NM_UE,
+           y=NUMERO_CANDIDATO_MUNICIPIO,
+           fill=DS_GENERO,
+           position = "fill")) +
+  ggtitle("Porcentagem de candidatos por gênero em cada município") +
+  xlab("Município") +
+  ylab("Porcentagem de Candidatos") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+```
+
+```{r}
+#10
+#A
+#gerando uma variavel binária que indica vereadores eleitos, "SIM" caso for eleito e "NÃO" caso não foi eleito
+banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
+  mutate(RESULTADO = case_when(DS_SIT_TOT_TURNO == "ELEITO" ~ "SIM",
+                            DS_SIT_TOT_TURNO == "ELEITO POR QP" ~ "SIM",
+                            DS_SIT_TOT_TURNO == "ELEITO POR MÉDIA" ~ "SIM",
+                            DS_SIT_TOT_TURNO == "SUPLENTE" ~ "NÃO",
+                            DS_SIT_TOT_TURNO == "NÃO ELEITO" ~ "NÃO"))
+
+```
+
+```{r}
+#B
+#calculando a taxa de sucesso (% de eleito) dos candidatos por municipio e gênero
+
+banco_candidatos_resultados_RR 
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE, DS_GENERO) %>%
+  filter(RESULTADO=="SIM") %>%
+  tally() %>%
+  mutate(TAXA_DE_SUCESSO=100*(n/sum(n)))
+  
+#C
+
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE, DS_GENERO) %>%
+  filter(RESULTADO=="SIM") %>%
+  tally() %>%
+  mutate(TAXA_DE_SUCESSO=100*(n/sum(n))) %>%
+  filter(DS_GENERO=="FEMININO") %>%
+  ggplot() +
+  geom_col(aes(x=NM_UE,
+           y=TAXA_DE_SUCESSO,
+           fill=DS_GENERO,
+           position="fill")) +
+ ggtitle("Taxa de sucesso de candidatas mulheres") +
+  xlab("Município") +
+  ylab("Taxa de sucesso") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+
+#D
+#extendendo o gráfico para mostrar a taxa de sucesso de homens e mulheres lado a lado por município.
+
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE, DS_GENERO) %>%
+  filter(RESULTADO=="SIM") %>%
+  tally() %>%
+  mutate(TAXA_DE_SUCESSO=100*(n/sum(n))) %>%
+  ggplot() +
+  geom_col(aes(x=NM_UE,
+           y=TAXA_DE_SUCESSO,
+           fill=DS_GENERO),
+           position="dodge",
+           binwidth=200) +
+ ggtitle("Taxa de sucesso de candidatos por gênero") +
+  xlab("Município") +
+  ylab("Taxa de sucesso") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+```
+
+#O município onde mulheres tem uma maior taxa de sucesso do que homens é Caroebe.
+
+```{r}
+#11
+#gerando um gráfico de tile que mostra o número de candidatos por município e gênero
+
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE,DS_GENERO) %>%
+  tally() %>%
+  ggplot() +
+  geom_tile(aes(x=NM_UE,
+                y=n,
+                fill=DS_GENERO)) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+```
+
+```{r}
+#12
+#A
+#gráfico de histograma da idade dos candidatos (NR_IDADE_DATA_POSSE)
+
+#Rremovendo observação estranha (999)
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+  ggplot() +
+  geom_histogram(aes(x=NR_IDADE_DATA_POSSE),
+                 binwidth = 1,
+                 color="black",
+                 fill="blue",
+                 alpha=0.2) +
+  ggtitle("Idade dos candidatos") +
+  xlab("Idade dos candidatos") +
+  ylab("Número de candidatos")
+```
+
+```{r}
+#B
+#mesmo gráfico de acima porém separado por gênero
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+  ggplot() +
+  geom_histogram(aes(x=NR_IDADE_DATA_POSSE,
+           fill=DS_GENERO),
+           position = "dodge",
+           binwidth = 1) +
+    ggtitle("Idade dos candidatos por gênero") +
+  xlab("Idade dos candidatos") +
+  ylab("Número de candidatos")
+```
+
+```{r}
+#criando gráficos de facet por gênero e raça
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+  ggplot() +
+  geom_histogram(aes(x=NR_IDADE_DATA_POSSE),
+           binwidth = 1) +
+  facet_grid(cols=vars(DS_GENERO),
+             rows=vars(DS_COR_RACA))
+```
+
+```{r}
+#13
+#a
+#Calcule a porcentagem de votos dos vereadores em cada município.
+
+
+banco_candidatos_resultados_RR %>%
+  group_by(NM_UE,
+           SQ_CANDIDATO,
+           NM_CANDIDATO,
+           DS_GENERO) %>%
+  mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
+  group_by(NM_UE) %>%
+  mutate(pct_votos=100*(100*votos/sum(votos)))
+
+#b 
+#calcule a media de porcentagem de voto por idade
+
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+  group_by(NM_UE,
+           SQ_CANDIDATO,
+           NM_CANDIDATO,
+           DS_GENERO) %>%
+  mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
+  group_by(NM_UE) %>%
+  mutate(pct_votos=100*(100*votos/sum(votos))) %>%
+  group_by(NR_IDADE_DATA_POSSE,DS_GENERO) %>%
+  summarize(media_pct_votos=mean(pct_votos, na.rm=T))
+
+#c
+#grafico de linhas com a porcentagem media de votos dos candidatos(eixo y) por idade do candidato (eixo x) 
+
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+   group_by(NR_IDADE_DATA_POSSE)%>%
+  mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T)))%>%
+  summarize(MEDIA_PCT=mean(PCT_VOTOS_IDADE)) %>%
+  ggplot() +
+  geom_line(aes(x=NR_IDADE_DATA_POSSE,
+                y=MEDIA_PCT), 
+            group=1)+
+  ggtitle("Porcentagem média de votos dos candidatos por idade") +
+  xlab("Idade") +
+  ylab("Porcentagem média de votos") +
+  theme(axis.text.x = element_text(size=6),
+          axis.title.x = element_text(size = 12),
+          axis.text.y = element_text(size=8),
+          axis.title=element_text(size=12,face="bold"))
+
+#d 
+#gráfico de linhas a pct de votos dos candidatos por idade com linhas separadas por genero
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+   group_by(NR_IDADE_DATA_POSSE)%>%
+  mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T)))%>%
+  ggplot() +
+  geom_line(aes(x=NR_IDADE_DATA_POSSE,
+                y=PCT_VOTOS_IDADE,
+                color=DS_GENERO), 
+            group=1)+
+  ggtitle("Porcentagem média de votos dos candidatos por idade") +
+  xlab("Idade") +
+  ylab("Porcentagem média de votos")
+```
+
+```{r}
+#14
+#A
+#calculando o voto total de cada partido em cada municipio 
+
+banco_voto_por_partido <- banco_candidatos_resultados_RR %>%
+  group_by(NM_UE,
+           SG_PARTIDO,
+           QT_VOTOS_NOMINAIS) %>%
+  tally() %>%
+  mutate(TOTAL_VOTO_PARTIDO=sum(n)) %>%
+  distinct(SG_PARTIDO,
+           TOTAL_VOTO_PARTIDO,
+           NM_UE) %>%
+  #calculando a porcentagem de voto de cada partido em cada municipio
+  ungroup() %>%
+  mutate(PCT_VOTO_PARTIDO_MUN=100*(100*(TOTAL_VOTO_PARTIDO/sum(TOTAL_VOTO_PARTIDO))))
+  
+```
+
+```{r}
+#usando o codigo para gerar uma tabela de IDH por municipio
+IDH <- tibble(NM_UE=c("ALTO ALEGRE", "AMAJARI", "BOAVISTA", "BONFIM",
+                      "CANTÁ", "CARACARAÍ", "CAROEBE", "IRACEMA", "MUCAJAÍ", 
+                      "NORMANDIA", "PACARAIMA", "RORAINOPOLIS", 
+                      "SÃO JOÃO DA BALIZA", "SÃO LUIZ", "UIRAMUTÃ"),
+       IDH=c(0.542, 0.484, 0.752, 0.626, 0.619, 0.624, 0.639, 0.582, 0.665, 
+             0.594, 0.650, 0.619, 0.655, 0.649, 0.453))
+```
+
+```{r}
+#C
+#usando anti_join para verificar se ha um identificador comum e completo para os dois bancos de resultados por partido e IDH 
+
+banco_candidatos_resultados_RR %>%
+  anti_join(IDH, by=c("NM_UE"))
+
+#corrigindo os erros
+#no caso referem-se aos nomes de "BOA VISTA"(que está como BOAVISTA no banco IDH) e "RORAINÓPOLIS" (que está como RORAINOPOLIS no banco IDH)
+
+IDH <- tibble(NM_UE=c("ALTO ALEGRE", "AMAJARI", "BOA VISTA", "BONFIM",
+                      "CANTÁ", "CARACARAÍ", "CAROEBE", "IRACEMA", "MUCAJAÍ", 
+                      "NORMANDIA", "PACARAIMA", "RORAINÓPOLIS", 
+                      "SÃO JOÃO DA BALIZA", "SÃO LUIZ", "UIRAMUTÃ"),
+       IDH=c(0.542, 0.484, 0.752, 0.626, 0.619, 0.624, 0.639, 0.582, 0.665, 
+             0.594, 0.650, 0.619, 0.655, 0.649, 0.453))
+
+```
+
+```{r}
+#left join juntando com o banco da questão A
+
+banco_voto_por_partido_idh <- banco_voto_por_partido %>%
+  left_join(IDH, by=c("NM_UE"))
+
+```
+
+```{r}
+#grafico de pontos do IDH  do municipio no eixo X por porcentagem de votos do partido PMDB no eixo Y 
+
+banco_voto_por_partido_idh %>%
+  filter(SG_PARTIDO == "PMDB") %>%
+  ggplot() +
+  geom_point(aes(x=IDH,
+                 y=PCT_VOTO_PARTIDO_MUN)) +
+  ggtitle("Porcentagem de votos no PMDB por IDH de município") +
+  xlab("IDH")+
+  ylab("Porcentagem de voto no PMDB")
+
+#gráfico da questão anterior ajustando o tamanho dos pontos para a quantidade de votos que o PMDB recebeu
+
+banco_voto_por_partido_idh %>%
+  filter(SG_PARTIDO == "PMDB") %>%
+  ggplot() +
+  geom_point(aes(x=IDH,
+                 y=PCT_VOTO_PARTIDO_MUN,
+                 size=TOTAL_VOTO_PARTIDO)) +
+  ggtitle("Porcentagem de votos no PMDB por IDH de município") +
+  xlab("IDH")+
+  ylab("Porcentagem de voto no PMDB")
+
+
+#grafico da questão anterior, porém ajustando a cor dos pontos ao invés do tamanho 
+
+banco_voto_por_partido_idh %>%
+  filter(SG_PARTIDO == "PMDB") %>%
+  ggplot() +
+  geom_point(aes(x=IDH,
+                 y=PCT_VOTO_PARTIDO_MUN,
+                 colour=TOTAL_VOTO_PARTIDO)) +
+  scale_color_gradient(low = "#f7fcfd",
+                       high = "#238b45") +
+  ggtitle("Porcentagem de votos no PMDB por IDH de município") +
+  xlab("IDH")+
+  ylab("Porcentagem de voto no PMDB")
+```
+
+
+
