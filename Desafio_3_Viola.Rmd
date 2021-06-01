@@ -94,7 +94,7 @@ banco_resultados_resumido
 #left_join com o banco da questão anterior
 
 banco_candidatos_resultados_RR <- banco_resultados_resumido %>%
-  left_join(banco_candidatos_RR, by=c("SQ_CANDIDATO", "NM_CANDIDATO"))
+  left_join(banco_candidatos_RR, by=c("SQ_CANDIDATO"))
 
 banco_candidatos_resultados_RR
 ```
@@ -123,19 +123,11 @@ banco_candidatos_resultados_RR_todos <- banco_candidatos_resultados_RR_todos %>%
 ```
 
 ```{r}
-#corrigindo os NA em DS_GENERO  e NM_UE
-banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
-  mutate(DS_GENERO=case_when(is.na(DS_GENERO)~ "FEMININO",
-                             TRUE ~ DS_GENERO))
-  
-banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
-  mutate(NM_UE=case_when(is.na(NM_UE)~"RORAINÓPOLIS",
-                         TRUE~NM_UE))
 #7A
 #graficos da 5B
 #numero de candidatos para vereador por municipio (NM_UE)
 banco_candidatos_resultados_RR %>%
-  group_by(NM_UE,NM_CANDIDATO) %>%
+  group_by(NM_UE,NM_CANDIDATO.x) %>%
   ggplot() +
   geom_bar(aes(x=NM_UE)) +
   #adicionando um título e nomeando os eixos
@@ -148,7 +140,7 @@ banco_candidatos_resultados_RR %>%
 #ou, alternativamente...
 
 #banco_candidatos_resultados_RR %>%
-#  group_by(NM_UE, NM_CANDIDATO) %>%
+#  group_by(NM_UE, NM_CANDIDATO.x) %>%
 #  tally() %>%
 #  ggplot() +
 #  geom_col(aes(x=NM_UE,
@@ -332,11 +324,10 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 #a
 #Calcule a porcentagem de votos dos vereadores em cada município.
 
-
 banco_candidatos_resultados_RR %>%
   group_by(NM_UE,
            SQ_CANDIDATO,
-           NM_CANDIDATO,
+           NM_CANDIDATO.x,
            DS_GENERO) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
@@ -348,7 +339,7 @@ banco_candidatos_resultados_RR %>%
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
   group_by(NM_UE,
            SQ_CANDIDATO,
-           NM_CANDIDATO,
+           NM_CANDIDATO.x,
            DS_GENERO) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
