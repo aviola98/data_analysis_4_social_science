@@ -1,8 +1,10 @@
 ---
 title: "Desafio_3_Viola"
 author: "André Viola"
-date: "5/21/2021"
-output: html_document
+date: "06/04/2021"
+output: 
+  html_document:
+    df_print: paged
 ---
 
 ```{r, echo=FALSE}
@@ -19,6 +21,10 @@ library(ggthemes)
 library(knitr)
 library(DT)
 ```
+
+#### Número USP: 10325940
+#### Disciplina: FLS6397
+#### Professor: Jonathan Peter Phillips
 
 ```{r}
 #abrindo os dados
@@ -211,7 +217,10 @@ banco_candidatos_resultados_RR %>%
   group_by(NM_UE, DS_GENERO) %>%
   filter(RESULTADO=="SIM") %>%
   tally() %>%
-  mutate(TAXA_DE_SUCESSO=100*(n/sum(n)))
+  mutate(TAXA_DE_SUCESSO=100*(n/sum(n))) %>%
+  select(DS_GENERO, TAXA_DE_SUCESSO) %>%
+  kable(caption = "Taxa de sucesso dos candidatos por município e gênero",
+         col.names = c("Município","Sexo","Taxa de Sucesso"))
 ```
 
 ```{r}
@@ -265,11 +274,14 @@ banco_candidatos_resultados_RR %>%
   group_by(NM_UE,DS_GENERO) %>%
   tally() %>%
   ggplot() +
-  geom_tile(aes(x=NM_UE,
-                y=n,
-                fill=DS_GENERO)) +
-  theme(axis.text.x = element_text(angle = 90),
-        legend.position = "bottom")
+  geom_tile(aes(x=DS_GENERO,
+                y=NM_UE,
+                fill=n)) +
+  ggtitle("Número de candidatos por município e gênero") +
+  xlab("Sexo") +
+  ylab("Municípios") +
+  theme(legend.position = "bottom") +
+  scale_fill_gradient(low="#f7fcfd", high="#238b45")
 ```
 
 ```{r}
@@ -329,7 +341,12 @@ banco_candidatos_resultados_RR %>%
            DS_GENERO) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
-  mutate(pct_votos=100*(100*votos/sum(votos)))
+  mutate(PCT_VOTOS=100*(100*votos/sum(votos))) %>%
+  select(SQ_CANDIDATO,
+         PCT_VOTOS) %>%
+  datatable(caption = "Porcentagem de votos por candidatos em cada municipio",
+            colnames = c("Município","Identificador do Candidato",
+                         "Porcentagem de votos"))
 ```
 
 ```{r}
@@ -338,13 +355,14 @@ banco_candidatos_resultados_RR %>%
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
   group_by(NM_UE,
            SQ_CANDIDATO,
-           NM_CANDIDATO.x,
-           DS_GENERO) %>%
+           NM_CANDIDATO.x) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
   mutate(pct_votos=100*(100*votos/sum(votos))) %>%
-  group_by(NR_IDADE_DATA_POSSE,DS_GENERO) %>%
-  summarize(media_pct_votos=mean(pct_votos, na.rm=T))
+  group_by(NR_IDADE_DATA_POSSE) %>%
+  summarize(MEDIA_PCT_VOTOS=mean(pct_votos, na.rm=T)) %>%
+  datatable(caption = "Média de porcentagem de votos por idade",
+        colnames = c("Idade","Média da porcentagem de votos")) 
 
 ``` 
 
@@ -373,17 +391,20 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 ```{r}
 #gráfico de linhas a pct de votos dos candidatos por idade com linhas separadas por genero
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
-   group_by(NR_IDADE_DATA_POSSE)%>%
-  mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T)))%>%
+  group_by(NR_IDADE_DATA_POSSE) %>%
+  mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T))) %>%
+  group_by(NR_IDADE_DATA_POSSE,
+           DS_GENERO) %>%
+  summarize(MEDIA_VOTOS=mean(PCT_VOTOS_IDADE)) %>%
   ggplot() +
   geom_line(aes(x=NR_IDADE_DATA_POSSE,
-                y=PCT_VOTOS_IDADE,
-                color=DS_GENERO), 
-            group=1)+
-  ggtitle("Porcentagem média de votos dos candidatos por idade") +
+                y=MEDIA_VOTOS,
+                color=DS_GENERO)) +
+  ggtitle("Porcentagem média de votos de candidatos por idade dividido por gênero") +
   xlab("Idade") +
-  ylab("Porcentagem média de votos") +
+  ylab("Porcentagem de votos") +
   theme_bw()
+  
 ```
 
 ```{r}
@@ -401,7 +422,6 @@ banco_voto_por_partido <- banco_candidatos_resultados_RR %>%
   #calculando a porcentagem de voto de cada partido em cada municipio
   ungroup() %>%
   mutate(PCT_VOTO_PARTIDO_MUN=100*(100*(TOTAL_VOTO_PARTIDO/sum(TOTAL_VOTO_PARTIDO))))
-  
 ```
 
 ```{r}
@@ -413,6 +433,7 @@ IDH <- tibble(NM_UE=c("ALTO ALEGRE", "AMAJARI", "BOAVISTA", "BONFIM",
        IDH=c(0.542, 0.484, 0.752, 0.626, 0.619, 0.624, 0.639, 0.582, 0.665, 
              0.594, 0.650, 0.619, 0.655, 0.649, 0.453))
 ```
+
 
 ```{r}
 #usando anti_join para verificar se ha um identificador comum e completo para os dois bancos de resultados por partido e IDH 
