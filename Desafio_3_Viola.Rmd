@@ -41,7 +41,7 @@ banco_candidatos_RR <-banco_candidatos_RR %>%
   mutate(SQ_COLIGACAO = as.character(SQ_COLIGACAO))
 ```
 
-### A unidade de análise do banco de candidatos são, como enunciado pelo titulo, os candidatos da eleição para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os mesmos. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO, NR_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO,NM_SOCIAL_CANDIDATO, NR_CPF_CANDIDATO,NM_EMAIL e NR_TITULO_ELEITORAL_CANDIDATO.
+### A unidade de análise do banco de candidatos são, como enunciado pelo título, os candidatos da eleição para vereador em Roraima em 2016. Cada observação/linha contém informações sobre os mesmos. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO, NR_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO,NM_SOCIAL_CANDIDATO, NR_CPF_CANDIDATO,NM_EMAIL e NR_TITULO_ELEITORAL_CANDIDATO.
 
 ### A unidade de análise do banco de resultados são, como enunciado pelo título, os resultados das eleições para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os resultados eleitorais por candidato. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO e NM_CANDIDATO.
 
@@ -301,7 +301,6 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 ```
 
 ```{r}
-#B
 #mesmo gráfico de acima porém separado por gênero
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
   ggplot() +
