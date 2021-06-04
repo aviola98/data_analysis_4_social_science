@@ -1,0 +1,23 @@
+\documentclass{article}
+
+\title{RNW analysis}
+\author{André}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+Hello \textit{everyone}
+
+\begin{itemize}
+\item primeiro
+\item segundo 
+\end {itemize}
+
+-primeiro
+-segundo
+
+
+
+\end{document}
