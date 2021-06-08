@@ -1,0 +1,17 @@
+---
+title: "Teste"
+author: "André Viola"
+date: "6/8/2021"
+output: html_document
+---
+
+```{r}
+library("tidyverse")
+library("nycflights13")
+
+flights %>% ggplot() + 
+  geom_density(aes(departure_delay)) +
+  xlim(0, 100)
+
+```
+
