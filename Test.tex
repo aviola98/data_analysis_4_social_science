@@ -1,0 +1,37 @@
+\documentclass{article}
+
+\title{RNW analysis}
+\author{André}
+
+\usepackage{Sweave}
+\begin{document}
+\input{Test-concordance}
+
+\maketitle
+
+Hello \textit{everyone}
+
+\begin{itemize}
+\item primeiro
+\item segundo 
+\end {itemize}
+
+-primeiro
+-segundo
+
+\begin{Schunk}
+\begin{Soutput}
+[1] 1722
+\end{Soutput}
+\begin{Soutput}
+# A tibble: 3 x 2
+  origin      n
+  <chr>   <int>
+1 EWR    120835
+2 JFK    111279
+3 LGA    104662
+\end{Soutput}
+\end{Schunk}
+
+
+\end{document}
