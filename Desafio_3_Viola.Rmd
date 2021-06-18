@@ -74,7 +74,7 @@ banco_candidatos_RR <- banco_candidatos_RR %>% select(SQ_CANDIDATO, NM_CANDIDATO
 
 banco_candidatos_resultados_RR_duplo <- banco_candidatos_RR %>%
   left_join(banco_resultados_RR, by=c("SQ_CANDIDATO","NM_CANDIDATO", "SG_PARTIDO"))
-
+banco_candidatos_resultados_RR_duplo
 banco_candidatos_resultados_RR_duplo %>%
   datatable(caption = "Banco dos candidatos e resultados duplo")
 ```
@@ -98,7 +98,7 @@ banco_resultados_resumido %>%
 
 banco_candidatos_resultados_RR <- banco_resultados_resumido %>%
   left_join(banco_candidatos_RR, by=c("SQ_CANDIDATO"))
-
+banco_candidatos_resultados_RR
 banco_candidatos_resultados_RR %>%
   datatable(caption = "Banco de candidatos e resultados")
 ```
@@ -384,7 +384,6 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
           axis.text.y = element_text(size=8),
           axis.title=element_text(size=12,face="bold")) +
   theme_bw()
-
 ``` 
 
 ```{r}

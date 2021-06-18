@@ -1,0 +1,37 @@
+---
+title: "Desafio_5_Viola"
+author: "André Viola"
+date: "6/18/2021"
+output: 
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+```
+
+```{r}
+#abrindo os pacotes necessários
+library(geobr)
+library(tidyverse)
+library(tidylog)
+library(crul)
+library(purrr)
+```
+
+```{r}
+#acessando os municípios do estado de São Paulo em 2018
+SP_municipalities <-
+  read_municipality(code_muni="SP",year=2018)
+```
+
+```{r}
+#usando a funcionalidade da família map para aplicar a função read_municipality para SP,RJ,MT,RS e RN (para o ano de 2018)
+?map
+SP_RJ_MT_RS_RN_municipalities <- 
+  map(read_municipality,code_muni="SP")
+
+```
+
