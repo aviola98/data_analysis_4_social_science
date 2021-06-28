@@ -19,7 +19,11 @@ library(tidyverse)
 library(tidylog)
 library(crul)
 library(purrr)
+library(readxl)
+library(sf)
 ```
+
+>Análise espacial
 
 ```{r}
 #acessando os municípios do estado de São Paulo em 2018
@@ -29,9 +33,52 @@ SP_municipalities <-
 
 ```{r}
 #usando a funcionalidade da família map para aplicar a função read_municipality para SP,RJ,MT,RS e RN (para o ano de 2018)
-?map
-SP_RJ_MT_RS_RN_municipalities <- 
-  map(read_municipality,code_muni="SP")
 
+estados <- c("SP","RJ","MT","RS","RN")
+SP_RJ_MT_RS_RN_municipalities <- estados %>%
+  map(read_municipality, 2018)
+```
+
+```{r}
+#abrindo os dados da população de São Paulo em 2010
+
+total_populacao_SP <- read_excel("total_populacao_sao_paulo.xls")
+```
+
+```{r}
+#cruzando o banco da população com o banco das fronteiras dos municipios de SP
+
+#mudando o código do municipio para dbl
+total_populacao_SP[,c(1)]<- sapply(total_populacao_SP[,c(1)],as.numeric)
+
+#mudando a variável "código do município" e "Nome do município" para "code_muni" e "name_muni" respectivamente, com a finalidade de realizar o join uma vez que estas são as chaves 
+
+total_populacao_SP <- total_populacao_SP %>%
+  rename("code_muni"="Código do município",
+         "name_muni"="Nome do município")
+
+total_populacao_SP
+
+SP_join <- SP_municipalities %>%
+  left_join(total_populacao_SP, c("code_muni",
+                                 "name_muni"))
+
+SP_join
+```
+
+```{r}
+#calculando a proporção da população urbana total em cada município 
+SP_join <- SP_join %>%
+  mutate(Proporcao_total_urbano=100*(`Total da população urbana`/`Total da população 2010`))
+```
+
+```{r}
+#apresentando os resultados em um mapa
+SP_join %>%
+  st_as_sf(coords=c("geom")) %>%
+  ggplot() +
+  geom_sf(aes(fill=Proporcao_total_urbano))+
+  ggtitle("Mapa da proporção da população urbana com relação à população total") +
+  theme_minimal()
 ```
 
