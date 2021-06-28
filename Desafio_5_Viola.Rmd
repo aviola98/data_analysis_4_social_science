@@ -21,6 +21,8 @@ library(crul)
 library(purrr)
 library(readxl)
 library(sf)
+library(broom)
+library(Zelig)
 ```
 
 >Análise espacial
@@ -78,3 +80,47 @@ SP_join %>%
   theme_minimal()
 ```
 
+> Testes estatísticos e regressões
+
+```{r}
+#teste de Shapiro para avaliar se a taxa de urbanização do município é distribuida de forma normal 
+
+#removendo notação científica
+options(scipen=999)
+teste_de_normalidade <- SP_join %>%
+  pull(Proporcao_total_urbano) %>%
+  shapiro.test() %>%
+  tidy()
+teste_de_normalidade
+```
+
+O teste de Shapiro-Wilk de normalidade da Taxa de urbanização do município (Proporcao_total_urbano) tem um valor 'p' de `r teste_de_normalidade %>% pull(p.value) %>% round(3)`, indicando que tem pouca chance da distribuição ser normal para esta variável.
+
+```{r}
+#executando uma regressão linear para avaliar se a taxa de urbanização do município (variável dependente) é associada com a população total do município (variável independente).
+
+linear_regression <- SP_join %>%
+  lm(Proporcao_total_urbano~`Total da população 2010`,
+     data=.) %>%
+  tidy()
+
+linear_regression
+```
+
+```{r}
+#gráfico do efeito marginal(o coeficiente) da variável da população na regressão anterior e o IC do coeficiente
+
+linear_regression %>%
+  #calculando o IC
+  mutate(conf.lo=estimate-1.96*std.error,
+         conf.hi=estimate+1.96*std.error) %>%
+  filter(term!="(Intercept)") %>%
+  ggplot() +
+  geom_point(aes(x=term,y=estimate))+
+  geom_errorbar(aes(x=term,y=estimate,ymin=conf.lo,ymax=conf.hi), width=0.1)+
+  geom_hline(yintercept=0,lty=2)+
+  theme_minimal()+
+  ggtitle("Gráfico de Efeito Marginal da variável População")
+```
+
+>Análise de Texto
