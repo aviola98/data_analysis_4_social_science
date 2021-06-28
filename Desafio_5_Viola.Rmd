@@ -25,13 +25,13 @@ library(sf)
 
 >Análise espacial
 
-```{r}
+```{r include=FALSE}
 #acessando os municípios do estado de São Paulo em 2018
 SP_municipalities <-
   read_municipality(code_muni="SP",year=2018)
 ```
 
-```{r}
+```{r include=FALSE}
 #usando a funcionalidade da família map para aplicar a função read_municipality para SP,RJ,MT,RS e RN (para o ano de 2018)
 
 estados <- c("SP","RJ","MT","RS","RN")
@@ -57,13 +57,9 @@ total_populacao_SP <- total_populacao_SP %>%
   rename("code_muni"="Código do município",
          "name_muni"="Nome do município")
 
-total_populacao_SP
-
 SP_join <- SP_municipalities %>%
   left_join(total_populacao_SP, c("code_muni",
                                  "name_muni"))
-
-SP_join
 ```
 
 ```{r}
