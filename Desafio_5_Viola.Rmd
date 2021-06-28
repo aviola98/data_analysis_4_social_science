@@ -23,6 +23,7 @@ library(readxl)
 library(sf)
 library(broom)
 library(Zelig)
+library(pdftools)
 ```
 
 >Análise espacial
@@ -124,3 +125,10 @@ linear_regression %>%
 ```
 
 >Análise de Texto
+
+```{r}
+#transformando pdf em texto simples
+
+discussao_camara <- tibble(pages=pdf_text("https://escriba.camara.leg.br/escriba-servicosweb/pdf/59638"))
+```
+
