@@ -41,11 +41,11 @@ banco_candidatos_RR <-banco_candidatos_RR %>%
   mutate(SQ_COLIGACAO = as.character(SQ_COLIGACAO))
 ```
 
-### A unidade de análise do banco de candidatos são, como enunciado pelo título, os candidatos da eleição para vereador em Roraima em 2016. Cada observação/linha contém informações sobre os mesmos. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO, NR_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO,NM_SOCIAL_CANDIDATO, NR_CPF_CANDIDATO,NM_EMAIL e NR_TITULO_ELEITORAL_CANDIDATO.
+* A unidade de análise do banco de candidatos são, como enunciado pelo título, os candidatos da eleição para vereador em Roraima em 2016. Cada observação/linha contém informações sobre os mesmos. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO, NR_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO,NM_SOCIAL_CANDIDATO, NR_CPF_CANDIDATO,NM_EMAIL e NR_TITULO_ELEITORAL_CANDIDATO.
 
-### A unidade de análise do banco de resultados são, como enunciado pelo título, os resultados das eleições para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os resultados eleitorais por candidato. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO e NM_CANDIDATO.
+* A unidade de análise do banco de resultados são, como enunciado pelo título, os resultados das eleições para vereador em Roraima em 2016. Cada observação/linha contem informações sobre os resultados eleitorais por candidato. As variáveis que identificam cada linha exclusivamente são a SQ_CANDIDATO e NM_CANDIDATO.
 
-### SQ_CANDIDATO é o identificador comum uma vez que se dá preferência por indicadores com sequências numéricas ao invés de caractéres (como no caso de NM_CANDIDATO)
+* SQ_CANDIDATO é o identificador comum uma vez que se dá preferência por indicadores com sequências numéricas ao invés de caractéres (como no caso de NM_CANDIDATO)
 
 ```{r, echo=F}
 #usado anti_join para identificar se ha resultados faltando no banco de dados de resultados que nao aparecem no banco de candidatos
@@ -58,9 +58,9 @@ banco_candidatos_RR %>% anti_join(banco_resultados_RR, c("SQ_CANDIDATO"))
 #ha 114 candidatos que não aparecem no banco de resultados 
 ```
 
-### Há 0 resultados que não aparecem no banco de dados dos candidatos e há 114 candidatos que não aparecem no banco resultados.
+* Há 0 resultados que não aparecem no banco de dados dos candidatos e há 114 candidatos que não aparecem no banco resultados.
 
-### Os candidatos não aparecem no banco de dados dos resultados porque eles estavam inaptos para a candidatura.
+* Os candidatos não aparecem no banco de dados dos resultados porque eles estavam inaptos para a candidatura.
 
 ```{r}
 #selecionando apenas SQ_CANDIDATO, NM_CANDIDATO, NM_UE, SG_PARTIDO, NR_IDADE_DATA_POSSE, DS_GENERO, DS_GRAU_INSTRUCAO, DS_COR_RACA do banco de dados de candidatos
@@ -116,7 +116,7 @@ banco_candidatos_resultados_RR_todos %>%
   datatable(caption ="Banco com todos os candidatos e resultados")
 ```
 
-### A coluna QT_VOTOS_NOMINAIS foi preenchida com NA para os candidatos que não receberam votos no banco resultados.
+* A coluna QT_VOTOS_NOMINAIS foi preenchida com NA para os candidatos que não receberam votos no banco resultados.
 ```{r}
 #para os candidatos que não receberam votos no banco resultados a coluna foi preenchida com NA
 #recodificando os NA em QT_VOTOS_NOMINAIS como 0
@@ -187,9 +187,11 @@ banco_candidatos_resultados_RR %>%
   tally() %>%
   group_by(NM_UE) %>%
   mutate(NUMERO_CANDIDATO_MUNICIPIO=sum(n,na.rm=T)) %>%
+  #cálculo da porcentagem de candidatos por gênero e município
+  mutate(PCT_GENERO= 100*(n/NUMERO_CANDIDATO_MUNICIPIO))%>%
   ggplot() +
   geom_col(aes(x=NM_UE,
-           y=NUMERO_CANDIDATO_MUNICIPIO,
+           y=PCT_GENERO,
            fill=DS_GENERO,
            position = "fill")) +
   ggtitle("Porcentagem de candidatos por gênero em cada município") +
@@ -201,13 +203,12 @@ banco_candidatos_resultados_RR %>%
 
 ```{r}
 #gerando uma variavel binária que indica vereadores eleitos, "SIM" caso for eleito e "NÃO" caso não foi eleito
+
 banco_candidatos_resultados_RR <- banco_candidatos_resultados_RR %>%
-  mutate(RESULTADO = case_when(DS_SIT_TOT_TURNO == "ELEITO" ~ "SIM",
+ mutate(RESULTADO = case_when(DS_SIT_TOT_TURNO == "ELEITO" ~ "SIM",
                             DS_SIT_TOT_TURNO == "ELEITO POR QP" ~ "SIM",
                             DS_SIT_TOT_TURNO == "ELEITO POR MÉDIA" ~ "SIM",
-                            DS_SIT_TOT_TURNO == "SUPLENTE" ~ "NÃO",
-                            DS_SIT_TOT_TURNO == "NÃO ELEITO" ~ "NÃO"))
-
+                            TRUE~"NÃO"))
 ```
 
 ```{r}
@@ -317,11 +318,11 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 #criando gráficos de facet por gênero e raça
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
   ggplot() +
-  geom_histogram(aes(x=NR_IDADE_DATA_POSSE),
+  geom_histogram(aes(x=NR_IDADE_DATA_POSSE,
+                     fill=DS_GENERO),
              color="black",
-             fill="orange",
-           binwidth = 1,
-           alpha=0.2) +
+           binwidth = 2,
+           alpha=0.5) +
   facet_grid(cols=vars(DS_GENERO),
              rows=vars(DS_COR_RACA)) +
   ggtitle("Idade dos candidatos por gênero e raça") +
@@ -334,10 +335,7 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 #Calculando a porcentagem de votos dos vereadores em cada município.
 
 banco_candidatos_resultados_RR %>%
-  group_by(NM_UE,
-           SQ_CANDIDATO,
-           NM_CANDIDATO.x,
-           DS_GENERO) %>%
+  group_by(NM_UE) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
   mutate(PCT_VOTOS=100*(100*votos/sum(votos))) %>%
@@ -352,9 +350,7 @@ banco_candidatos_resultados_RR %>%
 #calculando a media de porcentagem de voto por idade
 
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
-  group_by(NM_UE,
-           SQ_CANDIDATO,
-           NM_CANDIDATO.x) %>%
+  group_by(NM_UE) %>%
   mutate(votos=sum(QT_VOTOS_NOMINAIS)) %>%
   group_by(NM_UE) %>%
   mutate(pct_votos=100*(100*votos/sum(votos))) %>%
@@ -369,7 +365,7 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 #grafico de linhas com a porcentagem media de votos dos candidatos(eixo y) por idade do candidato (eixo x) 
 
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
-   group_by(NR_IDADE_DATA_POSSE)%>%
+   group_by(NM_UE)%>%
   mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T)))%>%
   summarize(MEDIA_PCT=mean(PCT_VOTOS_IDADE)) %>%
   ggplot() +
@@ -389,7 +385,7 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 ```{r}
 #gráfico de linhas a pct de votos dos candidatos por idade com linhas separadas por genero
 banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
-  group_by(NR_IDADE_DATA_POSSE) %>%
+  group_by(NM_UE) %>%
   mutate(PCT_VOTOS_IDADE=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T))) %>%
   group_by(NR_IDADE_DATA_POSSE,
            DS_GENERO) %>%
@@ -406,20 +402,33 @@ banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSS
 ```
 
 ```{r}
+#Candidato mais jovem com o maior numero de votos por sexo
+banco_candidatos_resultados_RR[banco_candidatos_resultados_RR$NR_IDADE_DATA_POSSE!=999,] %>%
+     group_by(NM_UE) %>%
+  mutate(PCT_VOTOS=100*(QT_VOTOS_NOMINAIS/sum(QT_VOTOS_NOMINAIS, na.rm=T)))%>%
+  group_by(NR_IDADE_DATA_POSSE,
+           DS_GENERO) %>%
+  summarize(MEDIA_VOTOS=mean(PCT_VOTOS))%>%
+   group_by(DS_GENERO) %>%
+  arrange(DS_GENERO, -MEDIA_VOTOS) %>%
+  top_n(1, MEDIA_VOTOS)
+
+```
+
+
+```{r}
 #calculando o voto total de cada partido em cada municipio 
 
 banco_voto_por_partido <- banco_candidatos_resultados_RR %>%
   group_by(NM_UE,
-           SG_PARTIDO,
-           QT_VOTOS_NOMINAIS) %>%
-  tally() %>%
-  mutate(TOTAL_VOTO_PARTIDO=sum(n)) %>%
-  distinct(SG_PARTIDO,
-           TOTAL_VOTO_PARTIDO,
-           NM_UE) %>%
+           SG_PARTIDO) %>%
+  mutate(TOTAL_VOTO_PARTIDO=sum(QT_VOTOS_NOMINAIS,na.rm=T)) %>%
   #calculando a porcentagem de voto de cada partido em cada municipio
-  ungroup() %>%
-  mutate(PCT_VOTO_PARTIDO_MUN=100*(100*(TOTAL_VOTO_PARTIDO/sum(TOTAL_VOTO_PARTIDO))))
+  #agrupando por município para calculo das porcentagens
+ group_by(NM_UE) %>%
+  #As porcentagens estavam sendo multiplicadas duas vezes por 100.
+  mutate(PCT_VOTO_PARTIDO_MUN=100*(TOTAL_VOTO_PARTIDO/sum(TOTAL_VOTO_PARTIDO,na.rm=T)))%>%
+  ungroup()
 ```
 
 ```{r}
