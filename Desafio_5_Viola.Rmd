@@ -24,6 +24,15 @@ library(sf)
 library(broom)
 library(Zelig)
 library(pdftools)
+library(ggplot2)
+library(ggthemes)
+library(knitr)
+library(DT)
+library(tidytext)
+library(textstem)
+library(lexiconPT)
+library(wordcloud)
+library(tm)
 ```
 
 >Análise espacial
@@ -92,6 +101,7 @@ teste_de_normalidade <- SP_join %>%
   pull(Proporcao_total_urbano) %>%
   shapiro.test() %>%
   tidy()
+
 teste_de_normalidade
 ```
 
@@ -128,7 +138,117 @@ linear_regression %>%
 
 ```{r}
 #transformando pdf em texto simples
-
+#abrindo o texto em um tibble no mesmo código 
 discussao_camara <- tibble(pages=pdf_text("https://escriba.camara.leg.br/escriba-servicosweb/pdf/59638"))
+```
+
+```{r}
+#separando o texto com str_split baseado em 'O SR.' e 'A SRA.'
+#obs: '.' é caractere especial, logo usei o Escape '\\.' para encontra-lo
+#TENTAR COM [O,A] SR[A]?. DEPOIS
+discussao_camara<-
+discussao_camara %>%
+  mutate(deputado=str_split(pages,"O SR\\. | A SRA\\."))
+```
+
+```{r}
+#unnesting os dados para que cada fala de deputado fique separada em uma linha separada do tibble
+discussao_camara <- 
+discussao_camara %>%
+  unnest(deputado)
+```
+
+```{r}
+#Usando separate para dividir a fala de cada deputado em duas colunas: O nome do Deputado, e o Discurso, usando o seguinte string como divisor: "\\) - "
+discussao_camara <-
+discussao_camara %>%
+  separate(deputado,"\\) - ",into=c("Deputado","Discurso"))
+```
+
+```{r}
+#usando filter para remover as linhas que começam com “Sessão” na coluna de ‘Deputado’.
+
+#como reparei que as colunas que começavam com "Sessão" em "Deputado" eram as que continham NA em seu discurso, eu simplesmente filtrei os NA na coluna Discurso
+discussao_camara <-
+discussao_camara %>%
+  filter(!is.na(Discurso))
+```
+
+```{r}
+#separando o nome do deputado do conteudo entre parentesis ao lado
+
+discussao_camara <-
+discussao_camara %>%
+  separate(Deputado, " \\(", into=c("nome_deputado","spam"))
+```
+
+```{r}
+#removendo colunas desnecessárias exceto nome_deputado e Discurso
+
+discussao_camara <-
+discussao_camara %>%
+  select(nome_deputado,Discurso)
+```
+
+```{r}
+#tokenzinando os discursos dos deputados em palavras unicas
+
+discussao_camara <-
+discussao_camara %>%
+  unnest_tokens(Palavra,Discurso, strip_numeric=T)
+```
+
+```{r}
+#removendo stopwords de português
+
+#criando um banco de stopwords
+stopwords <- get_stopwords(language="pt") %>%
+  rename(Palavra=word) %>%
+  #removendo "é"
+  add_row(Palavra="é",lexicon="pessoal")
+
+discussao_camara <-
+discussao_camara %>%
+  anti_join(stopwords,by="Palavra")
+```
+
+```{r}
+#transformando as palavras em seus stems
+
+discussao_camara <-
+discussao_camara %>%
+  mutate(stem=stem_words(Palavra,language="pt"))
+```
+
+```{r}
+#gerando um wordcloud dos stems das palavras utilizadas pelos Deputados
+
+discussao_camara %>%
+  sample_n(200) %>%
+  pull(stem) %>%
+  wordcloud()
+```
+
+```{r}
+#analise de sentimento para identificar qual Deputado usa as palavras mais otimistas e qual usa as mais pessimistas
+
+#criando banco de sentimentos
+sentimento <- oplexicon_v3.0 %>%
+  select(term,polarity) %>%
+  rename(Palavra=term)
+
+#juntando os bancos
+discussao_camara <-
+discussao_camara %>%
+  left_join(sentimento,by="Palavra")
+
+#identificando as linhas mais otimistas e as mais pessimistas da discussão
+discussao_camara
+discussao_camara %>%
+  group_by(nome_deputado) %>%
+  summarize(polarity=sum(polarity,na.rm=T))%>%
+  arrange(-polarity) %>%
+  slice(1,n()) %>%
+  kable(col.names=c("Deputado","Polaridade"))
 ```
 
