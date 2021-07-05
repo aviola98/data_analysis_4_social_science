@@ -145,10 +145,10 @@ discussao_camara <- tibble(pages=pdf_text("https://escriba.camara.leg.br/escriba
 ```{r}
 #separando o texto com str_split baseado em 'O SR.' e 'A SRA.'
 #obs: '.' é caractere especial, logo usei o Escape '\\.' para encontra-lo
-#TENTAR COM [O,A] SR[A]?. DEPOIS
+#TENTAR COM [O,A] SR[A]?. DEPOIS O SR\\. | A SRA\\. "[O A] SR[A]?. "
 discussao_camara<-
 discussao_camara %>%
-  mutate(deputado=str_split(pages,"O SR\\. | A SRA\\."))
+  mutate(deputado=str_split(pages,"O SR.|A SRA."))
 ```
 
 ```{r}
@@ -243,7 +243,6 @@ discussao_camara %>%
   left_join(sentimento,by="Palavra")
 
 #identificando as linhas mais otimistas e as mais pessimistas da discussão
-discussao_camara
 discussao_camara %>%
   group_by(nome_deputado) %>%
   summarize(polarity=sum(polarity,na.rm=T))%>%
