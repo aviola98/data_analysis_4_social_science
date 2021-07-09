@@ -128,6 +128,7 @@ linear_regression
 
 ```{r}
 #gráfico do efeito marginal(o coeficiente) da variável da população na regressão anterior e o IC do coeficiente
+#rodando o teste novamente versão tidy para fazer o gráfico (não funciona com stargazer)
 linear_regression_graph <-SP_join %>%
   lm(Proporcao_total_urbano~`Total da população 2010`,
      data=.) %>%
