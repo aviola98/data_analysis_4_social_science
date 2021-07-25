@@ -1,0 +1,326 @@
+---
+title: "A religião nos discursos do presidente Jair Bolsonaro"
+author: "André Viola"
+date: "7/13/2021"
+output:
+   html_document:
+     df_print: paged
+---
+
+```{r, echo=FALSE}
+#limpando o documento html final
+knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
+```
+
+> Objetivos da análise
+
+# Quais são os temas mais presentes nos pronunciamentos oficiais do presidente Bolsonaro realizados em 2019? Quais temáticas ele abordou? Seriam eles o nacionalismo, a religião ou os militares? Estes discursos possuem elementos populistas?
+# A proposta deste trabalho final é a 
+Neste projeto eu busco analisar os discursos do presidente Bolsonaro no ano de 2019 com o objetivo de identificar a frequência de referências à religião e às Forças Armadas.
+
+```{r}
+#abrindo as bibliotecas necessárias
+library(tidyverse)
+library(dplyr)
+library(rvest)
+library(stringr)
+library(readr)
+library(tidytext)
+library(textstem)
+library(lexiconPT)
+library(wordcloud)
+library(tm)
+library(lexiconPT)
+library(DT)
+#install.packages("topicmodels")
+library(topicmodels)
+#install.packages("reshape2")
+library(reshape2)
+library(broom)
+library(knitr)
+```
+
+```{r}
+#abrindo o banco de dados
+bolsonaro_discursos_links <- read_delim("bolsonaro-disc-bd-2019.csv",
+                                delim = ";")
+
+#converter id em numerico para organizar os dados
+bolsonaro_discursos_links$id <- as.numeric(bolsonaro_discursos_links$id)
+
+#organizando os dados por id e em seguida selecionando as primeiras 100 observações
+bolsonaro_discursos_links <-
+bolsonaro_discursos_links %>%
+  arrange(id) %>%
+  slice(1:100)
+```
+
+```{r}
+#realizando um for loop com o intuito de extrair os discursos dos links
+
+#criando um tibble vazio para armazenar os discursos
+
+bolsonaro_discursos <- tibble()
+
+for (link in bolsonaro_discursos_links$link_disc){
+  
+  pagina <- read_html(link)
+  node_titulo <- html_nodes(pagina, xpath = "//h1[@class = 'documentFirstHeading']")
+  titulo <- html_text(node_titulo) %>%
+    str_squish()
+  
+  node_discurso <- html_nodes(pagina, xpath="//div[@id = 'parent-fieldname-text']")
+  discurso <- html_text(node_discurso) %>%
+    str_squish()
+  discurso <- discurso[discurso!=""]
+  
+  tabela_discursos <- tibble(titulo, discurso)
+  
+  bolsonaro_discursos <- bind_rows(bolsonaro_discursos, tabela_discursos)
+
+}
+```
+
+```{r}
+#juntando as tableas bolsonaro_discursos e bolsonaro_discursos_links com a finalidade de adicionar a coluna "date" 
+
+#criando uma variavel id no banco bolsonaro_discursos com a finalidade de realizar o join
+
+bolsonaro_discursos<-
+bolsonaro_discursos %>%
+  mutate(id=c(1:100))
+
+#realizando o join e atribuindo o mesmo na tabela discursos
+bolsonaro_discursos <-
+bolsonaro_discursos_links%>%
+left_join(bolsonaro_discursos, by=("id"))
+
+#retirando a data inicial do texto do discurso
+bolsonaro_discursos <-
+bolsonaro_discursos %>%
+  mutate(discurso_separado=str_split(discurso, "de 2018|2019")) %>%
+  #selecionando o último elemento do vetor usando tail, uma vez que o último elemento do vetor corresponde ao discurso propriamente dito
+    mutate(discurso_separado_segundo=map_chr(discurso_separado,tail,n=1)) %>%
+  #usando unnest para retirar o discurso
+  unnest(discurso_separado_segundo) %>%
+  #selecionando apenas as colunas id, titulo e discurso_separado_segundo
+  select("id","titulo","discurso_separado_segundo") 
+
+#renomeando discurso_separado_segundo para discurso
+bolsonaro_discursos <-
+  bolsonaro_discursos %>%
+  rename(discurso=discurso_separado_segundo)
+
+#retirando a parte que vem depois do ouça
+bolsonaro_discursos <- bolsonaro_discursos %>%
+  mutate(discurso_separado=str_split(discurso, " Ouça")) %>%
+  mutate(discurso_separado_primeiro=map_chr(discurso_separado,1))%>%
+  mutate(discurso_separado_segundo=map_chr(discurso_separado,tail,n=1)) %>%
+  select("id","titulo","discurso_separado_primeiro") 
+  
+#renomeando discurso_separado_primeiro em discurso
+bolsonaro_discursos <- bolsonaro_discursos %>%
+  rename(discurso=discurso_separado_primeiro)
+```
+
+```{r}
+#tokenizando os discursos e armazenando o dataframe tokenizado em um novo banco "bolsonaro_palavras"
+bolsonaro_palavras <-
+bolsonaro_discursos %>%
+  unnest_tokens(palavra,discurso,strip_numeric=T)
+```
+
+```{r}
+#Tirando as stopwrods
+
+#criando o banco de stopwords 
+stopwords <- get_stopwords(language="pt") %>%
+  rename(palavra=word) %>%
+  add_row(palavra = c("é","senhora","senhores","senhor","aqui","presidente","ser","lá","prezado","ministro","vez","então","ter"), lexicon="pessoal")
+
+#realizando o anti_join para retirar as stopwords
+bolsonaro_palavras <-
+bolsonaro_palavras %>%
+  anti_join(stopwords,by="palavra")
+```
+
+```{r}
+#stem as palavras
+
+bolsonaro_palavras <- bolsonaro_palavras %>%
+  mutate(stem=stem_words(palavra,language = "pt"))
+```
+
+Quais são as palavras mais frequentes nos 100 discursos selecionados? Vamos ver uma representação gráfica das 20 mais frequentes:
+```{r}
+#Gráfico da frequência de palavras nos discursos de bolsonaro
+frequencia_palavras_bolsonaro<-
+bolsonaro_palavras %>%
+  count(palavra,sort=T) %>%
+  mutate(palavra=fct_reorder(palavra,n)) %>%
+  slice(1:20) %>%
+  ggplot(aes(palavra,n))+
+  geom_col(fill="red")+
+  coord_flip()+
+  labs(x="")+
+  theme_minimal() +
+  xlab("Palavras")+
+  ylab("Frequência Palavras")+
+  ggtitle("Palavras mais frequentes nos discursos de Bolsonaro")
+
+frequencia_palavras_bolsonaro
+```
+Interessante notar a frequência com que "Brasil","Militar","Deus","Povo" e "País" são citados. Pode ser um indicador interessante das ideias e símbolos que o seu governo pretende mobilizar, misturando nacionalismo, religiosidade,militarismo e populismo.
+
+Outra representação gráfica interessante quando se trata de dados textuais são as famosas wordclouds ("nuvem de palavras"). Vamos olhar para as palavras mais comuns nos 100 discursos selecionados de Bolsonaro desta maneira:
+
+```{r}
+#nuvem de palavras
+bolsonaro_palavras %>%
+  count(palavra) %>%
+  with(wordcloud(palavra,n,max.words=100))
+```
+
+>Análise de sentimento
+
+```{r}
+#analise de sentimento
+
+#Criando um tibble com sentimento
+sentimento <- oplexicon_v3.0 %>% select(term, polarity) %>%
+  rename(palavra=term)
+
+#realizando o join 
+bolsonaro_palavras <- bolsonaro_palavras %>%
+  left_join(sentimento,by="palavra")
+
+#summarizando o sentimento
+bolsonaro_palavras %>% summarize(sentimento=mean(polarity,na.rm=T))%>%
+  kable(caption="Sentimento médio nos discursos de Bolsonaro",
+        col.names="Sentimento")
+
+#sentimento sumarizado e guardado dentro de uma variável para colocar no texto como inline codigo
+
+sentimento <- bolsonaro_palavras %>% summarize(sentimento=mean(polarity,na.rm=T)) %>% pull(sentimento)
+```
+
+A média de sentimentos no discurso é de ```r sentimento``` , o que é um valor positivo, indicando um certo otimismo do presidente no primeiro ano de seu mandato.
+
+
+```{r}
+#criando uma nova coluna chamada "sentimento" e atribuindo "negativo","neutro" ou "positivo" com base na polaridade
+bolsonaro_palavras <-
+bolsonaro_palavras %>%
+  mutate(sentimento=case_when(polarity == 1 ~ "Positivo",
+                              polarity == 0 ~ "Neutro",
+                              polarity == -1 ~ "Negativo"))
+
+#visualizando graficamente as palavras positivas,negativas e neutras mais frequentes
+palavra_por_sentimento <-
+bolsonaro_palavras %>%
+  count(palavra,sentimento,sort=TRUE) %>%
+  ungroup() %>%
+  #usando na.omit para omitir os valores NA na polaridade
+  na.omit()%>%
+  group_by(sentimento) %>%
+  slice_max(n, n=10) %>%
+  ungroup() %>%
+  mutate(palavra = reorder(palavra, n)) %>%
+  ggplot() +
+  geom_col(aes(n,palavra,fill = sentimento),
+           show.legend = F) +
+  facet_wrap(~sentimento, scales = "free_y") +
+  xlab("Contibuição para o sentimento")
+
+palavra_por_sentimento
+```
+
+Nota-se que algumas palavras recebem conotação negativa mesmo sendo, de fato, neutras (como o caso do "obrigado").
+
+> Trigramas
+
+```{r}
+#realizando um trigram para ver quais palavras aparecem mais frequentemente juntas 
+
+bozo_trigram<-
+bolsonaro_discursos %>%
+  unnest_tokens(trigram,discurso, token="ngrams",n=3) %>%
+  #retirando as stopwords
+  separate(trigram,c("palavra1","palavra2","palavra3"), sep=" ") %>%
+  anti_join(stopwords,by=c("palavra1"="palavra"))%>%
+    anti_join(stopwords,by=c("palavra2"="palavra"))%>%
+    anti_join(stopwords,by=c("palavra3"="palavra")) %>%
+  unite("trigram", c(palavra1,palavra2,palavra3),sep=" ",remove=F)
+
+#vendo os trigramas mais frequentes
+bozo_trigram_grafico <-
+bozo_trigram %>%
+  count(trigram,sort=T) %>%
+  mutate(trigram=fct_reorder(trigram,n)) %>%
+  slice(1:20) %>%
+  ggplot(aes(trigram,n))+
+  geom_col(fill="red")+
+  coord_flip()+
+  labs(x="")+
+  theme_minimal() +
+  xlab("Trigramas")+
+  ylab("Frequência Trigramas")+
+  ggtitle("Trigramas mais frequentes nos discursos de Bolsonaro")
+bozo_trigram_grafico
+```
+
+No que diz respeito aos trigramas mais frequêntes, nota-se a presença do versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vós libertará"*.
+
+> tf-idf
+
+Nessa parte da análise vamos olhar para a frequência relativa de palavras. Assim, usa-se a estatística tf-idf que multiplica a frequência do termo (tf), dada pela equação:
+
+$$ tf_i,_j= {\left(\frac{n_{\text{i,j}}}{\sum_{\text{k}}n_i,_j}\right)}$$
+pela frequência inversa do termo (idf) dada pela equação:
+
+$$idf(\text{termo}) = \ln{\left(\frac{n_{\text{documentos}}}{n_{\text{documentos contendo o termo}}}\right)}$$
+De acordo com INSERIR AUTOR(), esta estatística tem o intuito de mensurar o quanto uma palavra é importante para um documento em uma coleção de documentos. 
+
+```{r}
+#frequência relativa de palavras 
+#calcular o total de cada palavra e depois ver quais são as mais usadas
+
+#contando quantas vezes a palavra aparece e salvando em um banco separado
+bolsonaro_total_palavras <- bolsonaro_palavras %>%
+  count(titulo,palavra,sort=T)
+
+#sumarizando o total de palavras por titulo
+bolsonaro_total_por_discurso <- bolsonaro_total_palavras %>%
+  group_by(titulo) %>%
+  summarize(total=sum(n))
+
+#juntando os bancos
+bolsonaro_frequentes_palavras <- left_join(bolsonaro_total_palavras,bolsonaro_total_por_discurso, "titulo")
+
+bolsonaro_frequentes_palavras
+```
+
+```{r}
+#aplicando a função bind_tf_idf
+
+bolsonaro_tf_idf <- bolsonaro_frequentes_palavras %>%
+  bind_tf_idf(palavra,titulo,n)
+
+
+#olhar os termos com maior tf_idf
+
+bolsonaro_tf_idf %>%
+  select(-total) %>%
+  arrange(desc(tf_idf))
+
+#armazenando o tf-idf maior 
+
+freq <- 
+bolsonaro_tf_idf %>%
+  select(-total) %>%
+  arrange(desc(tf_idf)) %>%
+  top_n(1,tf_idf) %>%
+  pull(tf_idf)
+```
+
+A palavra com maior frequência relativa é intérprete, com uma frequência de ```r freq ```
