@@ -1,5 +1,5 @@
 ---
-title: "A religião nos discursos do presidente Jair Bolsonaro"
+title: "Análise exploratória de 100 discursos de Jair Bolsonaro em seu primeiro ano de mandato."
 author: "André Viola"
 date: "7/13/2021"
 output:
@@ -14,9 +14,18 @@ knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
 
 > Objetivos da análise
 
-# Quais são os temas mais presentes nos pronunciamentos oficiais do presidente Bolsonaro realizados em 2019? Quais temáticas ele abordou? Seriam eles o nacionalismo, a religião ou os militares? Estes discursos possuem elementos populistas?
-# A proposta deste trabalho final é a 
-Neste projeto eu busco analisar os discursos do presidente Bolsonaro no ano de 2019 com o objetivo de identificar a frequência de referências à religião e às Forças Armadas.
+Quais são os temas mais presentes nos pronunciamentos oficiais do presidente Bolsonaro realizados em 2019? Quais temáticas ele abordou? Seriam eles o nacionalismo, a religião ou os militares? Estes discursos possuem elementos populistas? 
+Neste projeto final busco realizar uma análise exploratória de 100 discursos do presidente Jair Bolsonaro realizados no seu primeiro ano de mandato. 
+
+A análise se divide em :
+
+1.    Palavras mais frequêntes 
+
+2.    Análise de sentimento
+
+3.    n-gramas
+
+4.    tf-idf
 
 ```{r}
 #abrindo as bibliotecas necessárias
@@ -151,6 +160,8 @@ bolsonaro_palavras <- bolsonaro_palavras %>%
   mutate(stem=stem_words(palavra,language = "pt"))
 ```
 
+>Frequência de palavras
+
 Quais são as palavras mais frequentes nos 100 discursos selecionados? Vamos ver uma representação gráfica das 20 mais frequentes:
 ```{r}
 #Gráfico da frequência de palavras nos discursos de bolsonaro
@@ -279,7 +290,7 @@ $$ tf_i,_j= {\left(\frac{n_{\text{i,j}}}{\sum_{\text{k}}n_i,_j}\right)}$$
 pela frequência inversa do termo (idf) dada pela equação:
 
 $$idf(\text{termo}) = \ln{\left(\frac{n_{\text{documentos}}}{n_{\text{documentos contendo o termo}}}\right)}$$
-De acordo com INSERIR AUTOR(), esta estatística tem o intuito de mensurar o quanto uma palavra é importante para um documento em uma coleção de documentos. 
+De acordo com **SIGLE & ROBINSON(2017)**, esta estatística tem o intuito de mensurar o quanto uma palavra é importante para um documento em uma coleção de documentos. 
 
 ```{r}
 #frequência relativa de palavras 
@@ -296,8 +307,6 @@ bolsonaro_total_por_discurso <- bolsonaro_total_palavras %>%
 
 #juntando os bancos
 bolsonaro_frequentes_palavras <- left_join(bolsonaro_total_palavras,bolsonaro_total_por_discurso, "titulo")
-
-bolsonaro_frequentes_palavras
 ```
 
 ```{r}
@@ -311,9 +320,13 @@ bolsonaro_tf_idf <- bolsonaro_frequentes_palavras %>%
 
 bolsonaro_tf_idf %>%
   select(-total) %>%
-  arrange(desc(tf_idf))
+  arrange(desc(tf_idf)) %>%
+  select("titulo","palavra","tf_idf") %>%
+  datatable(colnames = c("Titulo","Palavra","tf_idf"),
+            caption = "Termos com maior tf_idf",
+            filter = 'top')
 
-#armazenando o tf-idf maior 
+#armazenando o tf-idf maior para colocar no código inline
 
 freq <- 
 bolsonaro_tf_idf %>%
@@ -324,3 +337,7 @@ bolsonaro_tf_idf %>%
 ```
 
 A palavra com maior frequência relativa é intérprete, com uma frequência de ```r freq ```
+
+**Bibliografia:**
+
+SIGLE,J., ROBINSON,D. *Text Mining wit R: a tidy approach*.O'Reilly Media.2017
