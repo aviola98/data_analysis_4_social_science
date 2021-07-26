@@ -73,26 +73,31 @@ bolsonaro_discursos <- tibble()
 
 for (link in bolsonaro_discursos_links$link_disc){
   
+  #lendo o html do link da página
   pagina <- read_html(link)
+  #lendo o node do titulo com html_nodes através de seu xpath
   node_titulo <- html_nodes(pagina, xpath = "//h1[@class = 'documentFirstHeading']")
+  #extraindo o titulo através de seu node e retirando caractéres estranhos com str_squish
   titulo <- html_text(node_titulo) %>%
     str_squish()
   
+  #lendo o node do discurso através da função html_nodes e de seu xpath
   node_discurso <- html_nodes(pagina, xpath="//div[@id = 'parent-fieldname-text']")
+  #extraindo o discurso através do seu node e retirando os caractéres estranhos
   discurso <- html_text(node_discurso) %>%
     str_squish()
   discurso <- discurso[discurso!=""]
   
+  #criando uma tabela com os titulos e seus respectivos discursos
   tabela_discursos <- tibble(titulo, discurso)
   
+  #juntando a tabela_discursos com o banco bolsonaro_discursos através da função bind_rows
   bolsonaro_discursos <- bind_rows(bolsonaro_discursos, tabela_discursos)
 
 }
 ```
 
 ```{r}
-#juntando as tableas bolsonaro_discursos e bolsonaro_discursos_links com a finalidade de adicionar a coluna "date" 
-
 #criando uma variavel id no banco bolsonaro_discursos com a finalidade de realizar o join
 
 bolsonaro_discursos<-
@@ -217,7 +222,7 @@ sentimento <- bolsonaro_palavras %>% summarize(sentimento=mean(polarity,na.rm=T)
 
 A média de sentimentos no discurso é de ```r sentimento``` , o que é um valor positivo, indicando um certo otimismo do presidente no primeiro ano de seu mandato.
 
-
+Podemos também visualizar as palavras positivas,negativas e neutras mais frequentes:
 ```{r}
 #criando uma nova coluna chamada "sentimento" e atribuindo "negativo","neutro" ou "positivo" com base na polaridade
 bolsonaro_palavras <-
@@ -246,7 +251,7 @@ bolsonaro_palavras %>%
 palavra_por_sentimento
 ```
 
-Nota-se que algumas palavras recebem conotação negativa mesmo sendo, de fato, neutras (como o caso do "obrigado").
+Nota-se que algumas palavras recebem conotação negativa mesmo sendo, de fato, neutras (*e.g.* "obrigado"), o que depende exclusivamente de como essas palavras foram codificadas no momento da criação do lexicon_PT.
 
 > Trigramas
 
