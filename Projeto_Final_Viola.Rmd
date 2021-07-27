@@ -1,10 +1,11 @@
 ---
-title: "Análise exploratória de 100 discursos de Jair Bolsonaro em seu primeiro ano de mandato."
+title: Análise exploratória de 100 discursos de Jair Bolsonaro em seu primeiro ano
+  de mandato.
 author: "André Viola"
 date: "7/13/2021"
 output:
-   html_document:
-     df_print: paged
+  html_document:
+    df_print: paged
 ---
 
 ```{r, echo=FALSE}
@@ -25,7 +26,7 @@ A análise se divide em :
 
 3.    n-gramas
 
-4.    tf-idf
+4.    tf_idf
 
 ```{r}
 #abrindo as bibliotecas necessárias
@@ -253,7 +254,7 @@ palavra_por_sentimento
 
 Nota-se que algumas palavras recebem conotação negativa mesmo sendo, de fato, neutras (*e.g.* "obrigado"), o que depende exclusivamente de como essas palavras foram codificadas no momento da criação do lexicon_PT.
 
-> Trigramas
+> N-grams
 
 ```{r}
 #realizando um trigram para ver quais palavras aparecem mais frequentemente juntas 
@@ -285,9 +286,71 @@ bozo_trigram %>%
 bozo_trigram_grafico
 ```
 
-No que diz respeito aos trigramas mais frequêntes, nota-se a presença do versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vós libertará"*.
+No que diz respeito aos trigramas mais frequêntes, nota-se a presença de elementos religiosos como o versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vós libertará"* e "tudo deus acima" (que provavelmente seria parte da frase "Brasil acima de tudo, Deus acima de todos").
 
-> tf-idf
+Nota-se a presença de "crise ética moral", o que também é um indicativo de um certo grau de conservadorismo por parte de seu governo.
+
+Elementos nacionalistas e militaristas também se destacam, sendo os trigramas "maravilhosa chamada brasil","querido exército brasileiro", "maior colégio militar", "segunda guerra mundial" indicadores dessas tendências.
+
+Por fim, se tem a presença de atores políticos como o STF, FHC, General Augusto Heleno, Major Vitor Hugo, Marcos Pontes e Benjamin Netanyahu.
+
+
+
+
+Outra forma de visualizar n-grams é através de uma análise de rede, desvendando a relação entre as palavras com um *igraph*. 
+
+No caso, foram utilizados bigramas ao invés de trigramas, com a finalidade de captar mais facilmente a relação entre palavras.
+
+```{r}
+library(igraph)
+library(ggraph)
+
+#para realizar um igraph irei utilizar um bigrama para facilitar a captação de combinações mais comuns entre as palavras
+
+#criando um bigrama
+bolsonaro_bigrama <- bolsonaro_discursos %>%
+  unnest_tokens(bigram,discurso, token="ngrams",n=2) %>%
+  #retirando as stopwords
+  separate(bigram,c("palavra1","palavra2"), sep=" ") %>%
+  anti_join(stopwords,by=c("palavra1"="palavra"))%>%
+    anti_join(stopwords,by=c("palavra2"="palavra"))%>%
+  unite("bigram", c(palavra1,palavra2),sep=" ",remove=F)
+
+#contando as palavras
+
+bigram_counts <- bolsonaro_bigrama %>%
+  count(palavra1,palavra2,sort=T)
+  
+#filtrando o gráfico somente para combinações comuns
+bi_graph <- bigram_counts %>%
+  filter(n>20) %>%
+  graph_from_data_frame()
+
+#gerando uma combinação aleatória
+set.seed(2017)
+
+#construindo uma seta "a" 
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bi_graph, layout="fr")+
+  #adicionando a estética edge_alpha para fazer com que as setas fiquem transparentes com base no quão comuns ou raros são os bigramas
+  geom_edge_link(aes(edge_alpha=n),show.legend=F,
+                 #adicionando a seta e o "end_cap" sinalizando que a seta termina antes de tocar o nó
+                 arrow=a,end_cap=circle(.07,"inches")) +
+  #adicionando fatores estéticos no nó como cor e tamanho 
+  geom_node_point(color="lightblue",size=5)+
+  geom_node_text(aes(label=name),vjust = 1, hjust = 1) +
+  #adicionando um tema que melhor combina com esse tipo de gráfico
+  theme_void() +
+  ggtitle("Relação entre palavras nos discursos selecionados de Bolsonaro")
+```
+
+A primeira vista salta aos olhos as combinações "povo-brasileiro-exército","deus-acima-brasil" e "forças-armadas", que dizem muito sobre as principais bandeiras ideologicas do governo como a ideia de "povo", o militarismo (também presente na combinação "academia-militar-colégio" e "agulhas-negras"), a religiosidade e o nacionalismo. 
+
+Outra coisa que se destaca é a presença de figuras políticas como o ministro da economia Paulo Guedes, o minsitro da ciência  Marcos Pontes e o então presidente da câmera Rodrigo Maia.
+
+
+> tf_idf
 
 Nessa parte da análise vamos olhar para a frequência relativa de palavras. Assim, usa-se a estatística tf-idf que multiplica a frequência do termo (tf), dada pela equação:
 
@@ -340,6 +403,8 @@ bolsonaro_tf_idf %>%
   top_n(1,tf_idf) %>%
   pull(tf_idf)
 ```
+
+
 
 A palavra com maior frequência relativa é intérprete, com uma frequência de ```r freq ```
 
