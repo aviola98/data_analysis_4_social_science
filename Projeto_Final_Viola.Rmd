@@ -301,6 +301,8 @@ Outra forma de visualizar n-grams é através de uma análise de rede, desvendan
 
 No caso, foram utilizados bigramas ao invés de trigramas, com a finalidade de captar mais facilmente a relação entre palavras.
 
+
+
 ```{r}
 library(igraph)
 library(ggraph)
@@ -344,6 +346,8 @@ ggraph(bi_graph, layout="fr")+
   theme_void() +
   ggtitle("Relação entre palavras nos discursos selecionados de Bolsonaro")
 ```
+
+
 
 A primeira vista salta aos olhos as combinações "povo-brasileiro-exército","deus-acima-brasil" e "forças-armadas", que dizem muito sobre as principais bandeiras ideologicas do governo como a ideia de "povo", o militarismo (também presente na combinação "academia-militar-colégio" e "agulhas-negras"), a religiosidade e o nacionalismo. 
 
