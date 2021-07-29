@@ -72,6 +72,10 @@ bolsonaro_discursos_links %>%
 
 bolsonaro_discursos <- tibble()
 
+#for loop
+
+#OBS: pelo fato de estar realizando uma leitura dos links , o loop pode demorar por volta de 2 minutos para rodar 
+
 for (link in bolsonaro_discursos_links$link_disc){
   
   #lendo o html do link da página
