@@ -202,6 +202,36 @@ bolsonaro_palavras %>%
   with(wordcloud(palavra,n,max.words=100))
 ```
 
+
+Qual o discurso com a maior média de palavras? 
+```{r}
+#discurso com a maior média de palavras  
+
+tabela_media <-
+bolsonaro_palavras %>%
+  group_by(titulo) %>%
+  count(palavra,sort=T) %>%
+summarise(mean_palavra_discurso=mean(n,na.rm=T)) %>%
+  top_n(1,mean_palavra_discurso) %>%
+  kable(caption = "Discurso com a maior média de palavras",
+        col.names = c("Discurso","Média de Palavras"))
+
+tabela_media
+
+#fazendo pull da média 
+media <-
+bolsonaro_palavras %>%
+  group_by(titulo) %>%
+  count(palavra,sort=T) %>%
+summarise(mean_palavra_discurso=mean(n,na.rm=T)) %>%
+  top_n(1,mean_palavra_discurso) %>%
+  pull(mean_palavra_discurso)
+```
+
+O discurso com a maior média de palavras é o "Discurso do Presidente da República, Jair Bolsonaro, durante encontro com lideranças empresariais e Cerimônia de Entrega da Ordem do Mérito Industrial São Paulo - São Paulo/SP" com uma média de ```r media```
+
+
+
 >Análise de sentimento
 
 ```{r}
@@ -290,7 +320,7 @@ bozo_trigram %>%
 bozo_trigram_grafico
 ```
 
-No que diz respeito aos trigramas mais frequêntes, nota-se a presença de elementos religiosos como o versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vós libertará"* e "tudo deus acima" (que provavelmente seria parte da frase "Brasil acima de tudo, Deus acima de todos").
+No que diz respeito aos trigramas mais frequêntes, nota-se a presença de elementos religiosos como o versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vos libertará"* e "tudo deus acima" (que provavelmente seria parte da frase "Brasil acima de tudo, Deus acima de todos").
 
 Nota-se a presença de "crise ética moral", o que também é um indicativo de um certo grau de conservadorismo por parte de seu governo.
 
