@@ -7,6 +7,10 @@ output:
   html_document:
     df_print: paged
 ---
+#### Número USP: 10325940
+#### Disciplina: FLS6397
+#### Professor: Jonathan Peter Phillips
+
 
 ```{r, echo=FALSE}
 #limpando o documento html final
@@ -16,11 +20,11 @@ knitr::opts_chunk$set(echo=FALSE,error=FALSE,warning=FALSE,message=FALSE)
 > Objetivos da análise
 
 Quais são os temas mais presentes nos pronunciamentos oficiais do presidente Bolsonaro realizados em 2019? Quais temáticas ele abordou? Seriam eles o nacionalismo, a religião ou os militares? Estes discursos possuem elementos populistas? 
-Neste projeto final busco realizar uma análise exploratória de 100 discursos do presidente Jair Bolsonaro realizados no seu primeiro ano de mandato. 
+Neste projeto final busco realizar uma análise exploratória de 100 primeiros discursos do presidente Jair Bolsonaro realizados no seu primeiro ano de mandato utilizando as técnicas de programação na linguagem R aprendidas ao longo do curso. 
 
 A análise se divide em :
 
-1.    Palavras mais frequêntes 
+1.    Frequência de palavras
 
 2.    Análise de sentimento
 
@@ -28,37 +32,53 @@ A análise se divide em :
 
 4.    tf_idf
 
+
+O banco de dados utilizado para a realização dessa análise foi gentilmente concedido pelo Professor Dr.Paolo Ricci do Departamento de Ciência Polítia da FFLCH-USP.
 ```{r}
 #abrindo as bibliotecas necessárias
+
+#install.packages("tidyverse")
 library(tidyverse)
+#install.packages("dplyr")
 library(dplyr)
+#install.packages("rvest")
 library(rvest)
+#install.packages("stringr")
 library(stringr)
+#install.packages("readr")
 library(readr)
+# install.packages("tidytext")
 library(tidytext)
+# install.packages("textstem")
 library(textstem)
+# install.packages("lexiconPT")
 library(lexiconPT)
+#install.packages("wordcloud")
 library(wordcloud)
+#install.packages("tm")
 library(tm)
-library(lexiconPT)
+#install.packages("DT")
 library(DT)
 #install.packages("topicmodels")
 library(topicmodels)
 #install.packages("reshape2")
 library(reshape2)
+#install.packages("broom")
 library(broom)
+#install.packages("knitr")
 library(knitr)
 ```
 
 ```{r}
 #abrindo o banco de dados
+#banco disponibilizado pelo Professor Dr.Paolo Ricci
 bolsonaro_discursos_links <- read_delim("bolsonaro-disc-bd-2019.csv",
                                 delim = ";")
 
 #converter id em numerico para organizar os dados
 bolsonaro_discursos_links$id <- as.numeric(bolsonaro_discursos_links$id)
 
-#organizando os dados por id e em seguida selecionando as primeiras 100 observações
+#organizando os dados por id e em seguida selecionando as primeiras 100 observações (selecionam-se 100 discursos por questão de tempo em compilar o script)
 bolsonaro_discursos_links <-
 bolsonaro_discursos_links %>%
   arrange(id) %>%
@@ -172,7 +192,9 @@ bolsonaro_palavras <- bolsonaro_palavras %>%
 
 >Frequência de palavras
 
-Quais são as palavras mais frequentes nos 100 discursos selecionados? Vamos ver uma representação gráfica das 20 mais frequentes:
+Quais são as palavras mais frequentes nos 100 primeiros discursos do presidente? Vamos ver uma representação gráfica das 20 mais frequentes:
+
+
 ```{r}
 #Gráfico da frequência de palavras nos discursos de bolsonaro
 frequencia_palavras_bolsonaro<-
@@ -191,9 +213,12 @@ bolsonaro_palavras %>%
 
 frequencia_palavras_bolsonaro
 ```
+
+
 Interessante notar a frequência com que "Brasil","Militar","Deus","Povo" e "País" são citados. Pode ser um indicador interessante das ideias e símbolos que o seu governo pretende mobilizar, misturando nacionalismo, religiosidade,militarismo e populismo.
 
-Outra representação gráfica interessante quando se trata de dados textuais são as famosas wordclouds ("nuvem de palavras"). Vamos olhar para as palavras mais comuns nos 100 discursos selecionados de Bolsonaro desta maneira:
+Outra representação gráfica interessante quando se trata de dados textuais são as famosas wordclouds ("nuvem de palavras"). Vamos olhar para as palavras mais comuns nos 100 discursos de Bolsonaro desta maneira:
+
 
 ```{r}
 #nuvem de palavras
@@ -204,6 +229,8 @@ bolsonaro_palavras %>%
 
 
 Qual o discurso com a maior média de palavras? 
+
+
 ```{r}
 #discurso com a maior média de palavras  
 
@@ -228,7 +255,8 @@ summarise(mean_palavra_discurso=mean(n,na.rm=T)) %>%
   pull(mean_palavra_discurso)
 ```
 
-O discurso com a maior média de palavras é o "Discurso do Presidente da República, Jair Bolsonaro, durante encontro com lideranças empresariais e Cerimônia de Entrega da Ordem do Mérito Industrial São Paulo - São Paulo/SP" com uma média de ```r media```
+
+O discurso com a maior média de palavras é o "Discurso do Presidente da República, Jair Bolsonaro, durante encontro com lideranças empresariais e Cerimônia de Entrega da Ordem do Mérito Industrial São Paulo - São Paulo/SP" com uma média de ```r media``` palavras.
 
 
 
@@ -255,9 +283,12 @@ bolsonaro_palavras %>% summarize(sentimento=mean(polarity,na.rm=T))%>%
 sentimento <- bolsonaro_palavras %>% summarize(sentimento=mean(polarity,na.rm=T)) %>% pull(sentimento)
 ```
 
+
 A média de sentimentos no discurso é de ```r sentimento``` , o que é um valor positivo, indicando um certo otimismo do presidente no primeiro ano de seu mandato.
 
 Podemos também visualizar as palavras positivas,negativas e neutras mais frequentes:
+
+
 ```{r}
 #criando uma nova coluna chamada "sentimento" e atribuindo "negativo","neutro" ou "positivo" com base na polaridade
 bolsonaro_palavras <-
@@ -286,9 +317,18 @@ bolsonaro_palavras %>%
 palavra_por_sentimento
 ```
 
-Nota-se que algumas palavras recebem conotação negativa mesmo sendo, de fato, neutras (*e.g.* "obrigado"), o que depende exclusivamente de como essas palavras foram codificadas no momento da criação do lexicon_PT.
+
+Nota-se que algumas palavras recebem uma conotação diferente da que se esperaria de fato delas (*e.g.* "obrigado" sendo colocada como "negativa", "grande" como "neutro" e "mundo" como "positivo"), o que depende exclusivamente de como essas palavras foram codificadas no momento da criação do lexicon_PT.
 
 > N-grams
+
+Os n-gramas são uma ferramenta poderosa para se ter ideia do contexto de uma palavra e também nos dão uma ideia de qual a combinação mais frequente das mesmas (ou seja, seus pares). 
+
+
+Eles podem ser uma combinação de duas (bigrams), três(trigrams) ou mais palavras.
+
+Primeiramente vamos olhar para os 20 trigrams mais frequentes:
+
 
 ```{r}
 #realizando um trigram para ver quais palavras aparecem mais frequentemente juntas 
@@ -316,13 +356,14 @@ bozo_trigram %>%
   theme_minimal() +
   xlab("Trigramas")+
   ylab("Frequência Trigramas")+
-  ggtitle("Trigramas mais frequentes nos discursos de Bolsonaro")
+  ggtitle("Trigrams mais frequentes nos discursos de Bolsonaro")
 bozo_trigram_grafico
 ```
 
-No que diz respeito aos trigramas mais frequêntes, nota-se a presença de elementos religiosos como o versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vos libertará"* e "tudo deus acima" (que provavelmente seria parte da frase "Brasil acima de tudo, Deus acima de todos").
 
-Nota-se a presença de "crise ética moral", o que também é um indicativo de um certo grau de conservadorismo por parte de seu governo.
+No que diz respeito aos trigrams mais frequêntes, constata-se a presença de elementos religiosos como o versículo bíblico *João 8:32* que diz *"Conhecereis a verdade e a verdade vos libertará"* e "tudo deus acima" (que provavelmente seria parte da frase "Brasil acima de tudo, Deus acima de todos").
+
+Tem-se, também, a presença de "crise ética moral", o que é um indicativo de um certo grau de conservadorismo por parte de seu governo.
 
 Elementos nacionalistas e militaristas também se destacam, sendo os trigramas "maravilhosa chamada brasil","querido exército brasileiro", "maior colégio militar", "segunda guerra mundial" indicadores dessas tendências.
 
@@ -333,8 +374,7 @@ Por fim, se tem a presença de atores políticos como o STF, FHC, General August
 
 Outra forma de visualizar n-grams é através de uma análise de rede, desvendando a relação entre as palavras com um *igraph*. 
 
-No caso, foram utilizados bigramas ao invés de trigramas, com a finalidade de captar mais facilmente a relação entre palavras.
-
+No caso, foram utilizados bigrams ao invés de trigrams, com a finalidade de captar mais facilmente a relação entre palavras.
 
 
 ```{r}
@@ -382,8 +422,7 @@ ggraph(bi_graph, layout="fr")+
 ```
 
 
-
-A primeira vista salta aos olhos as combinações "povo-brasileiro-exército","deus-acima-brasil" e "forças-armadas", que dizem muito sobre as principais bandeiras ideologicas do governo como a ideia de "povo", o militarismo (também presente na combinação "academia-militar-colégio" e "agulhas-negras"), a religiosidade e o nacionalismo. 
+A primeira chamam a atenção as combinações "povo-brasileiro-exército","deus-acima-brasil" e "forças-armadas", que dizem muito sobre as principais bandeiras ideologicas do governo como a ideia de "povo", o militarismo (também presente na combinação "academia-militar-colégio" e "agulhas-negras"), a religiosidade e o nacionalismo. 
 
 Outra coisa que se destaca é a presença de figuras políticas como o ministro da economia Paulo Guedes, o minsitro da ciência  Marcos Pontes e o então presidente da câmera Rodrigo Maia.
 
@@ -424,6 +463,7 @@ bolsonaro_tf_idf <- bolsonaro_frequentes_palavras %>%
 
 #olhar os termos com maior tf_idf
 
+tabela_maior_tf_idf <- 
 bolsonaro_tf_idf %>%
   select(-total) %>%
   arrange(desc(tf_idf)) %>%
@@ -431,6 +471,9 @@ bolsonaro_tf_idf %>%
   datatable(colnames = c("Titulo","Palavra","tf_idf"),
             caption = "Termos com maior tf_idf",
             filter = 'top')
+#pode ser que apareça uma mensagem após compilar dizendo que "parece que seus dados são grandes demais para client-side Datatables", mas o script funciona mesmo assim
+
+tabela_maior_tf_idf
 
 #armazenando o tf-idf maior para colocar no código inline
 
